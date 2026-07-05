@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Mapping Prototype — AI Generated</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #0b0d11; color: #e8eaed; padding: 40px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  .header { margin-bottom: 40px; }
+  .header h1 { font-size: 28px; font-weight: 700; color: #ff9100; }
+  .header .meta { color: rgba(232,234,237,0.4); font-size: 13px; margin-top: 8px; }
+  .section { background: #16181f; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .section h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #ff9100; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; color: rgba(232,234,237,0.5); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .source { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #00e5ff; }
+  .target { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #00c853; }
+  .transform { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(83,109,254,0.1); color: #536dfe; }
+  .tag { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 4px; }
+  .tag.direct { background: rgba(0,200,83,0.1); color: #00c853; }
+  .tag.calc { background: rgba(255,145,0,0.1); color: #ff9100; }
+  .tag.lookup { background: rgba(83,109,254,0.1); color: #536dfe; }
+  .tag.filter { background: rgba(255,23,68,0.1); color: #ff1744; }
+  .summary { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+  .diagram { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8; color: rgba(232,234,237,0.6); padding: 16px; background: #0b0d11; border-radius: 8px; }
+  .diagram .src { color: #00e5ff; } .diagram .tgt { color: #00c853; }
+  .diagram .trans { color: #536dfe; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🗺️ Data Mapping Prototype</h1>
+    <div class="meta">Wygenerowano przez AI • 2026-07-04 • System źródłowy: Core Banking → DWH</div>
+  </div>
+
+  <div class="summary">
+    <div><div style="font-size:24px; font-weight:700; color:#00e5ff;">34</div><div style="font-size:12px; color:rgba(232,234,237,0.5);">Mappingi źródłowe</div></div>
+    <div><div style="font-size:24px; font-weight:700; color:#00c853;">28</div><div style="font-size:12px; color:rgba(232,234,237,0.5);">Mappingi docelowe</div></div>
+    <div><div style="font-size:24px; font-weight:700; color:#536dfe;">12</div><div style="font-size:12px; color:rgba(232,234,237,0.5);">Transformacje</div></div>
+    <div><div style="font-size:24px; font-weight:700; color:#ff9100;">3</div><div style="font-size:12px; color:rgba(232,234,237,0.5);">Luki w mapowaniu</div></div>
+  </div>
+
+  <div class="section">
+    <h2>📋 Mapping — CUSTOMERS → DWH.FACT_CUSTOMER_DAILY</h2>
+    <table>
+      <tr><th>Źródło (Core)</th><th>Target (DWH)</th><th>Transformacja</th><th>Status</th></tr>
+      <tr>
+        <td class="source">CUSTOMERS.CUSTOMER_ID</td>
+        <td class="target">CUSTOMER_SK</td>
+        <td><span class="transform">direct</span></td>
+        <td><span class="tag direct">✓ mapowany</span></td>
+      </tr>
+      <tr>
+        <td class="source">CUSTOMERS.NAME</td>
+        <td class="target">CUSTOMER_NAME</td>
+        <td><span class="transform">direct</span></td>
+        <td><span class="tag direct">✓ mapowany</span></td>
+      </tr>
+      <tr>
+        <td class="source">CUSTOMERS.SEGMENT</td>
+        <td class="target">SEGMENT_CODE</td>
+        <td><span class="transform">lookup: segment_map</span></td>
+        <td><span class="tag lookup">✓ mapowany</span></td>
+      </tr>
+      <tr>
+        <td class="source">ACCOUNTS.ACCOUNT_ID</td>
+        <td class="target">PRIMARY_ACCOUNT_ID</td>
+        <td><span class="transform">lookup: first_account</span></td>
+        <td><span class="tag lookup">✓ mapowany</span></td>
+      </tr>
+      <tr>
+        <td class="source">—</td>
+        <td class="target">CUSTOMER_RISK_SCORE</td>
+        <td><span class="transform">calc: CASE WHEN balance>10000 THEN 'low'...</span></td>
+        <td><span class="tag calc">✓ wyliczany</span></td>
+      </tr>
+      <tr>
+        <td class="source">CUSTOMERS.CREATED_DATE</td>
+        <td class="target">—</td>
+        <td><span class="transform">—</span></td>
+        <td><span class="tag filter" style="background:rgba(255,23,68,0.1);color:#ff1744;">✗ brak mapowania</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>📋 Mapping — TRANSACTIONS → DWH.FACT_TRANSACTIONS</h2>
+    <table>
+      <tr><th>Źródło (Core)</th><th>Target (DWH)</th><th>Transformacja</th><th>Status</th></tr>
+      <tr>
+        <td class="source">TRANSACTIONS.TRANSACTION_ID</td>
+        <td class="target">TRANSACTION_SK</td>
+        <td><span class="transform">direct</span></td>
+        <td><span class="tag direct">✓ mapowany</span></td>
+      </tr>
+      <tr>
+        <td class="source">TRANSACTIONS.AMOUNT</td>
+        <td class="target">AMOUNT</td>
+        <td><span class="transform">direct</span></td>
+        <td><span class="tag direct">✓ mapowany</span></td>
+      </tr>
+      <tr>
+        <td class="source">TRANSACTIONS.CURRENCY</td>
+        <td class="target">AMOUNT_PLN</td>
+        <td><span class="transform">calc: amount * rate_from_currency_map</span></td>
+        <td><span class="tag calc">✓ wyliczany</span></td>
+      </tr>
+      <tr>
+        <td class="source">TRANSACTIONS.STATUS</td>
+        <td class="target">STATUS_CODE</td>
+        <td><span class="transform">filter: ONLY 'COMPLETED'</span></td>
+        <td><span class="tag filter">✓ filtrowany</span></td>
+      </tr>
+      <tr>
+        <td class="source">TRANSACTIONS.TIMESTAMP</td>
+        <td class="target">TRANSACTION_DATE</td>
+        <td><span class="transform">truncate to date</span></td>
+        <td><span class="tag direct">✓ mapowany</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>🔀 Diagram przepływu (AI-generated)</h2>
+    <div class="diagram">
+      <span class="src">CORE.CUSTOMERS</span> ──────────────────────────────┐<br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;customer_id ──→ customer_sk <span class="trans">[direct]</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;name ──→ customer_name <span class="trans">[direct]</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;segment ──→ segment_code <span class="trans">[lookup]</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;created_date ──→ <span style="color:#ff1744;">❌ UNMAPPED</span><br>
+      &nbsp;&nbsp;│<br>
+      <span class="src">CORE.ACCOUNTS</span> ────────────────────────────────┐<br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;account_id ──→ primary_account_id <span class="trans">[lookup]</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;balance ──→ risk_score <span class="trans">[calc]</span><br>
+      &nbsp;&nbsp;│<br>
+      <span class="src">CORE.TRANSACTIONS</span> ────────────────────────────┐<br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;transaction_id ──→ transaction_sk <span class="trans">[direct]</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;amount ──→ amount <span class="trans">[direct]</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;amount ──→ amount_pln <span class="trans">[calc * rate]</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;status ──→ status_code <span class="trans">[filter COMPLETED]</span><br>
+      &nbsp;&nbsp;│<br>
+      &nbsp;&nbsp;▼<br>
+      <span class="tgt">DWH.FACT_CUSTOMER_DAILY</span> &nbsp;&nbsp; <span class="tgt">DWH.FACT_TRANSACTIONS</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>⚠️ Wykryte problemy (AI)</h2>
+    <div style="font-size:13px; line-height:1.8; color:rgba(232,234,237,0.7);">
+      <p>1. <strong>Brak mapowania</strong> dla kolumny CUSTOMERS.CREATED_DATE — dane nie trafiają do DWH.</p>
+      <p style="margin-top:4px;">2. <strong>Duplikacja logiki</strong> — segment_code mapowany w 2 miejscach (PowerCenter + widok). Ryzyko niespójności.</p>
+      <p style="margin-top:4px;">3. <strong>Brak historyzacji</strong> — CUSTOMER_SEGMENT zmienia się w czasie, ale DWH nie przechowuje wersji.</p>
+    </div>
+  </div>
+
+  <div class="footer">Raport wygenerowany przez AI • Enterprise Hub Portal • POC v0.1.0</div>
+</div>
+</body>
+</html>
