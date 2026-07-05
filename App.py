@@ -13,7 +13,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
-APP_VERSION = "v0.2.1"
+APP_VERSION = "v0.2.2"
 
 # ---------------------------------------------------------------------------
 # App & DB
