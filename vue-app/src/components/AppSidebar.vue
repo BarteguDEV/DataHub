@@ -23,25 +23,14 @@
       </router-link>
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="user-info">
-        <div class="user-avatar">{{ state.user?.initials || '??' }}</div>
-        <div class="user-details">
-          <span class="user-name">{{ state.user?.username || '—' }}</span>
-          <span class="user-role">{{ state.user?.role || '—' }}</span>
-        </div>
-      </div>
-    </div>
   </aside>
 </template>
 
 <script setup>
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
-import { useAuth } from '@/stores/auth'
 
 const route = useRoute()
-const { state } = useAuth()
 
 const navItems = [
   {
@@ -170,43 +159,4 @@ function isActive(path) {
   text-transform: uppercase;
 }
 
-.sidebar-footer {
-  padding: 16px 20px;
-  border-top: 1px solid var(--border-color);
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--accent-gradient);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: #000;
-}
-
-.user-details {
-  display: flex;
-  flex-direction: column;
-}
-
-.user-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.user-role {
-  font-size: 11px;
-  color: var(--text-muted);
-}
 </style>

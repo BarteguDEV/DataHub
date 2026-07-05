@@ -41,45 +41,45 @@
       </div>
 
       <!-- Użytkownik -->
-      <div class="header-user" @click="showMenu = !showMenu">
-        <div class="user-avatar-sm">{{ user.initials }}</div>
-        <div class="user-info-sm">
-          <span class="user-name-sm">{{ user.username }}</span>
-          <span class="user-role-sm">{{ user.role }}</span>
-        </div>
-        <svg
-          class="user-chevron"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          :class="{ rotated: showMenu }"
-        >
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
+      <div class="header-user">
+        <button class="user-btn" @click="showMenu = !showMenu" title="Menu użytkownika">
+          <span class="user-avatar-sm">{{ user.initials }}</span>
+          <span class="user-info-sm">
+            <span class="user-name-sm">{{ user.username }}</span>
+            <span class="user-role-sm">{{ user.role }}</span>
+          </span>
+          <svg
+            class="user-chevron"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            :class="{ rotated: showMenu }"
+          >
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
 
         <!-- Dropdown -->
-        <transition name="dropdown">
-          <div v-if="showMenu" class="user-dropdown" @click.stop>
-            <div class="dropdown-header">
-              <div class="dropdown-avatar">{{ user.initials }}</div>
-              <div>
-                <div class="dropdown-name">{{ user.username }}</div>
-                <div class="dropdown-login">Zalogowano: {{ user.loginTime }}</div>
-              </div>
+        <div v-if="showMenu" class="user-dropdown">
+          <div class="dropdown-header">
+            <div class="dropdown-avatar">{{ user.initials }}</div>
+            <div>
+              <div class="dropdown-name">{{ user.username }}</div>
+              <div class="dropdown-login">Zalogowano: {{ user.loginTime }}</div>
             </div>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item" @click="handleLogout">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-              Wyloguj
-            </button>
           </div>
-        </transition>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" @click="handleLogout">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Wyloguj
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -89,14 +89,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/stores/auth'
 import { useVersion } from '@/stores/version'
+import { logoutUser } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
-const { state, logout } = useAuth()
+const { state } = useAuth()
 const { appVersion, fetchVersion } = useVersion()
 
 const showMenu = ref(false)
@@ -121,10 +122,14 @@ function goBack() {
   router.push({ name: 'HubSelect' })
 }
 
-async function handleLogout() {
+function handleLogout() {
   showMenu.value = false
-  await logout()
-  // Przekierowanie przez Vue Router — niezależne od backendu
+  // Stan czyścimy SYNCHRONICZNIE — niezależne od API
+  state.user = null
+  state.isAuthenticated = false
+  sessionStorage.removeItem('datahub_auth')
+  // API call fire-and-forget — nie czekamy na odpowiedź
+  logoutUser().catch(() => {})
   router.push({ name: 'Login' })
 }
 
