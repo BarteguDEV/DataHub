@@ -4,7 +4,7 @@ import os
 from functools import wraps
 
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -128,6 +128,71 @@ def logout():
     session.clear()
     flash("Zostałeś wylogowany.", "info")
     return redirect(url_for("login"))
+
+
+# ---------------------------------------------------------------------------
+# API — Vue.js frontend
+# ---------------------------------------------------------------------------
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.get_json(silent=True) or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    user = User.query.filter_by(username=username).first()
+    if not user or not user.check_password(password):
+        return jsonify({"error": "Niepoprawna nazwa użytkownika lub hasło"}), 401
+
+    session["user_id"] = user.id
+    session["username"] = user.username
+    session.permanent = True
+    return jsonify({"ok": True, "user": {"id": user.id, "username": user.username}})
+
+
+@app.route("/api/register", methods=["POST"])
+def api_register():
+    data = request.get_json(silent=True) or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"error": "Uzupełnij wszystkie pola"}), 400
+
+    if User.query.filter_by(username=username).first():
+        return jsonify({"error": "Użytkownik już istnieje"}), 409
+
+    user = User(username=username)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    return jsonify({"ok": True}), 201
+
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    session.clear()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/me")
+def api_me():
+    if "user_id" not in session:
+        return jsonify({"error": "Nie zalogowany"}), 401
+    return jsonify({"id": session["user_id"], "username": session["username"]})
+
+
+# Obsługa Vue SPA — wszystkie ścieżki /vue/... serwują index.html
+@app.route("/vue/")
+@app.route("/vue/<path:path>")
+def vue_app(path=""):
+    vue_dir = os.path.join(app.root_path, "static", "vue")
+    if path and os.path.exists(os.path.join(vue_dir, path)):
+        return send_from_directory(vue_dir, path)
+    index_path = os.path.join(vue_dir, "index.html")
+    if os.path.exists(index_path):
+        return send_from_directory(vue_dir, "index.html")
+    return "Vue app not built. Run: cd vue-app && npm run build", 404
 
 
 # ---------------------------------------------------------------------------

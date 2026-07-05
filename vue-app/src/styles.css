@@ -1,0 +1,68 @@
+.accent { color: #00c853; }
+
+.btn {
+  padding: 12px;
+  background: #00c853;
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0,200,83,0.3);
+}
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-sm { padding: 8px 16px; width: auto; }
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #e8eaed;
+}
+.btn-outline:hover { border-color: #00c853; color: #00c853; box-shadow: none; }
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(232,234,237,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 11px 14px;
+  background: rgba(11,13,17,0.8);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: #e8eaed;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-group input::placeholder { color: rgba(232,234,237,0.2); }
+.input-group input:focus { border-color: #00c853; box-shadow: 0 0 0 3px rgba(0,200,83,0.1); }
+
+.error-msg {
+  font-size: 13px;
+  color: #ff5252;
+  padding: 8px 12px;
+  background: rgba(255,82,82,0.08);
+  border-radius: 6px;
+  text-align: center;
+}

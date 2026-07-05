@@ -18,3 +18,8 @@ Thumbs.db
 *.zip
 .python_packages/
 deployment/
+
+# Node / Vue
+node_modules/
+vue-app/node_modules/
+static/vue/

@@ -50,7 +50,15 @@ jobs:
           fi
           echo "Sekret OK ✓"
 
-      - name: Deploy na Azure App Service (Oryx zbuduje sam)
+      - name: Zbuduj Vue.js frontend
+        shell: bash
+        run: |
+          cd vue-app
+          npm install
+          npm run build
+          echo "Vue app zbudowana → static/vue/"
+
+      - name: Deploy na Azure App Service (Oryx zbuduje Python)
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
