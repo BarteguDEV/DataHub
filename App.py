@@ -6,6 +6,7 @@ from functools import wraps
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
@@ -145,13 +146,16 @@ def not_found(e):
 with app.app_context():
     db.create_all()
 
-    # Stwórz domyślnego admina, jeśli nie istnieje
-    if not User.query.filter_by(username="admin").first():
+    # Stwórz domyślnego admina — bezpieczne dla wielu workerów gunicorna
+    try:
         admin = User(username="admin")
         admin.set_password("admin123")
         db.session.add(admin)
         db.session.commit()
         print("Utworzono domyślnego użytkownika: admin / admin123")
+    except IntegrityError:
+        db.session.rollback()
+        # Admin już istnieje (inny worker go wstawił) — to nie błąd
 
 
 # ---------------------------------------------------------------------------
