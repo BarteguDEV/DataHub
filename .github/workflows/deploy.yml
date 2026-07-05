@@ -1,9 +1,12 @@
 # GitHub Actions — deploy na Azure App Service (Python 3.12)
-# Wymagany sekret w GitHub: AZURE_WEBAPP_PUBLISH_PROFILE
+# Deployuje sam kod źródłowy — Azure Oryx sam buduje i instaluje zależności.
 #
-# Azure App Service — Application Settings:
-#   SECRET_KEY  — klucz sesji Flask (wymagany)
-#   DATABASE_URL — opcjonalnie (domyślnie SQLite)
+# Wymagany sekret w GitHub:
+#   AZURE_WEBAPP_PUBLISH_PROFILE — profil publikacji z Azure App Service
+#
+# Wymagane ustawienia w Azure App Service → Configuration:
+#   SECRET_KEY               — klucz sesji Flask (wymagany)
+#   SCM_DO_BUILD_DURING_DEPLOYMENT = true
 
 name: Deploy do Azure App Service
 
@@ -13,36 +16,15 @@ on:
   workflow_dispatch:
 
 env:
-  # ──────────────────────────────────────────────────
-  # ZMIEŃ to na nazwę swojego App Service w Azure
-  # (pierwsza część URL-a: https://<NAZWA>.azurewebsites.net)
-  # ──────────────────────────────────────────────────
   AZURE_WEBAPP_NAME: barteguapp
   PYTHON_VERSION: "3.12"
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Pobierz kod źródłowy
         uses: actions/checkout@v4
-
-      - name: Skonfiguruj Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Zainstaluj zależności
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Przygotuj paczkę wdrożeniową
-        shell: bash
-        run: |
-          mkdir -p deploy
-          cp -r App.py startup.sh requirements.txt runtime.txt templates deploy/
-          cd deploy && zip -r ../release.zip .
 
       - name: Sprawdź konfigurację
         shell: bash
@@ -50,17 +32,11 @@ jobs:
           APP_NAME="${{ env.AZURE_WEBAPP_NAME }}"
           echo "Aplikacja: $APP_NAME"
           echo "Python:    ${{ env.PYTHON_VERSION }}"
-
           if [ "$APP_NAME" = "twoja-nazwa-aplikacji" ]; then
             echo "::error::Nie zmieniłeś AZURE_WEBAPP_NAME w workflow!"
-            echo "::error::Edytuj plik .github/workflows/deploy.yml i ustaw"
-            echo "::error::AZURE_WEBAPP_NAME na nazwę swojego App Service."
-            echo "::error::"
-            echo "::error::Przykład: jeśli adres to https://datahub-app.azurewebsites.net"
-            echo "::error::to wpisz: AZURE_WEBAPP_NAME: datahub-app"
+            echo "::error::Edytuj plik .github/workflows/deploy.yml linia 20"
             exit 1
           fi
-          echo "Nazwa aplikacji zmieniona ✓"
 
       - name: Sprawdź sekret AZURE_WEBAPP_PUBLISH_PROFILE
         env:
@@ -72,11 +48,11 @@ jobs:
             echo "::error::Dodaj go w: Settings → Secrets and variables → Actions → New repository secret"
             exit 1
           fi
-          echo "Sekret AZURE_WEBAPP_PUBLISH_PROFILE znaleziony ✓"
+          echo "Sekret OK ✓"
 
-      - name: Deploy na Azure App Service
+      - name: Deploy na Azure App Service (Oryx zbuduje sam)
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: release.zip
+          package: .
