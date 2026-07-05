@@ -1,0 +1,51 @@
+# GitHub Actions workflow — deploy na Azure App Service (Python 3.12)
+# Automatycznie uruchamia się na push do gałęzi main.
+#
+# Wymagane sekrety w GitHub:
+#   AZURE_WEBAPP_PUBLISH_PROFILE  — profil publikacji z Azure App Service
+#
+# Azure App Service wymaga ustawienia w Application Settings:
+#   SECRET_KEY  — klucz do podpisywania sesji Flask
+#   DATABASE_URL — (opcjonalnie, domyślnie SQLite)
+
+name: Deploy do Azure App Service
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: DataHub
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pobierz kod źródłowy
+        uses: actions/checkout@v4
+
+      - name: Skonfiguruj Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Zainstaluj zależności
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Paczkuj aplikację (bez niepotrzebnych plików)
+        run: |
+          mkdir -p deploy
+          cp -r App.py startup.sh requirements.txt runtime.txt templates deploy/
+          cd deploy
+          zip -r ../release.zip .
+
+      - name: Deploy na Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: release.zip
