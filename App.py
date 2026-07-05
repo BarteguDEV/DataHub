@@ -11,14 +11,13 @@ import requests
 import websocket as ws_client
 from dotenv import load_dotenv
 from flask import Flask, request, session, jsonify, send_from_directory, Response
-from flask_sock import Sock
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError, OperationalError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
-APP_VERSION = "v0.2.8"
+APP_VERSION = "v0.2.9"
 
 # ---------------------------------------------------------------------------
 # App & DB
@@ -32,7 +31,6 @@ app.config["SQLALCHEMY_DATABASE_URI"] = DB_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
-sock = Sock(app)
 
 # Ścieżka do zbudowanej aplikacji Vue
 VUE_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "vue")
@@ -297,7 +295,7 @@ def serve_ai_report(filename: str):
 
 
 # ---------------------------------------------------------------------------
-# Streamlit — WebSocket proxy (przez flask-sock + gevent)
+# Streamlit — proxy HTTP + WebSocket do lokalnego serwera (port 8501)
 # ---------------------------------------------------------------------------
 
 STREAMLIT_PORT = 8501
@@ -305,35 +303,44 @@ STREAMLIT_BASE = f"http://localhost:{STREAMLIT_PORT}"
 STREAMLIT_WS_BASE = f"ws://localhost:{STREAMLIT_PORT}"
 
 
-@sock.route("/_stcore/<path:subpath>")
-@sock.route("/streamlit/_stcore/<path:subpath>")
-def streamlit_ws_proxy(ws, subpath: str):
-    """Proxy WebSocket do Streamlit — niezbędny do renderowania."""
+@app.route("/_stcore/<path:subpath>")
+@app.route("/streamlit/_stcore/<path:subpath>")
+def streamlit_ws_proxy(subpath: str):
+    """Proxy WebSocket → Streamlit.
+    Gevent-websocket wstrzykuje obiekt WebSocket do request.environ.
+    """
+    client_ws = request.environ.get("wsgi.websocket")
+    if not client_ws:
+        # Zwykłe HTTP — przekaż do HTTP proxy Streamlit
+        return streamlit_http_proxy(f"_stcore/{subpath}")
+
     target_url = f"{STREAMLIT_WS_BASE}/_stcore/{subpath}"
     try:
         target = ws_client.create_connection(target_url, timeout=5)
     except Exception:
-        ws.close()
-        return
+        return "Streamlit WebSocket unavailable", 502
 
     stop = threading.Event()
 
-    def relay():
-        while not stop.is_set():
-            try:
+    def relay_to_client():
+        """Streamlit → Client WebSocket."""
+        try:
+            while not stop.is_set():
                 data = target.recv()
-                if data:
-                    ws.send(data)
-            except Exception:
-                stop.set()
-                break
+                if data is None:
+                    break
+                client_ws.send(data)
+        except Exception:
+            pass
+        finally:
+            stop.set()
 
-    t = threading.Thread(target=relay, daemon=True)
+    t = threading.Thread(target=relay_to_client, daemon=True)
     t.start()
 
     try:
         while not stop.is_set():
-            data = ws.receive()
+            data = client_ws.receive()
             if data is None:
                 break
             target.send(data)
@@ -346,9 +353,11 @@ def streamlit_ws_proxy(ws, subpath: str):
         except Exception:
             pass
 
+    return ""
+
 
 # ---------------------------------------------------------------------------
-# Streamlit — proxy HTTP do lokalnego serwera (port 8501)
+# Streamlit — proxy HTTP
 # ---------------------------------------------------------------------------
 
 
