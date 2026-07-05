@@ -124,8 +124,8 @@ function goBack() {
 async function handleLogout() {
   showMenu.value = false
   await logout()
-  // Pełne przeładowanie, bo niszczymy layout (sidebar + header)
-  window.location.href = '/login'
+  // Przekierowanie przez Vue Router — niezależne od backendu
+  router.push({ name: 'Login' })
 }
 
 onMounted(async () => {
