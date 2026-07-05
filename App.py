@@ -18,7 +18,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", os.urandom(24).hex())
 
 # SQLite lokalnie; na Azure można podmienić przez zmienną środowiskową
-DB_URL = os.getenv("DATABASE_URL", "sqlite:///users.db")
+DB_URL = os.getenv("DATABASE_URL") or "sqlite:///users.db"
 app.config["SQLALCHEMY_DATABASE_URI"] = DB_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
