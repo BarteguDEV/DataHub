@@ -5,7 +5,7 @@ cd "$(dirname "$0")" || exit 1
 export PYTHONPATH=$(pwd):$PYTHONPATH
 
 # Uruchom Streamlit w tle na porcie 8501 (Flask proxy na /streamlit/)
-streamlit run streamlit_app.py \
+python -m streamlit run streamlit_app.py \
     --server.port 8501 \
     --server.headless true \
     --server.enableCORS false \

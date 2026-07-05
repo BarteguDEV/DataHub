@@ -10,5 +10,5 @@ workers = (multiprocessing.cpu_count() * 2) + 1
 timeout = 120
 max_requests = 1000
 max_requests_jitter = 50
-worker_class = "sync"
+worker_class = "gevent"
 log_file = "-"

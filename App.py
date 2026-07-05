@@ -5,16 +5,20 @@ import random
 from datetime import datetime, timedelta
 from functools import wraps
 
+import threading
+
 import requests
+import websocket as ws_client
 from dotenv import load_dotenv
 from flask import Flask, request, session, jsonify, send_from_directory, Response
+from flask_sock import Sock
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError, OperationalError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
-APP_VERSION = "v0.2.7"
+APP_VERSION = "v0.2.8"
 
 # ---------------------------------------------------------------------------
 # App & DB
@@ -28,6 +32,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = DB_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+sock = Sock(app)
 
 # Ścieżka do zbudowanej aplikacji Vue
 VUE_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "vue")
@@ -292,16 +297,64 @@ def serve_ai_report(filename: str):
 
 
 # ---------------------------------------------------------------------------
-# Streamlit — proxy do lokalnego serwera Streamlit (port 8501)
+# Streamlit — WebSocket proxy (przez flask-sock + gevent)
 # ---------------------------------------------------------------------------
 
 STREAMLIT_PORT = 8501
 STREAMLIT_BASE = f"http://localhost:{STREAMLIT_PORT}"
+STREAMLIT_WS_BASE = f"ws://localhost:{STREAMLIT_PORT}"
+
+
+@sock.route("/_stcore/<path:subpath>")
+@sock.route("/streamlit/_stcore/<path:subpath>")
+def streamlit_ws_proxy(ws, subpath: str):
+    """Proxy WebSocket do Streamlit — niezbędny do renderowania."""
+    target_url = f"{STREAMLIT_WS_BASE}/_stcore/{subpath}"
+    try:
+        target = ws_client.create_connection(target_url, timeout=5)
+    except Exception:
+        ws.close()
+        return
+
+    stop = threading.Event()
+
+    def relay():
+        while not stop.is_set():
+            try:
+                data = target.recv()
+                if data:
+                    ws.send(data)
+            except Exception:
+                stop.set()
+                break
+
+    t = threading.Thread(target=relay, daemon=True)
+    t.start()
+
+    try:
+        while not stop.is_set():
+            data = ws.receive()
+            if data is None:
+                break
+            target.send(data)
+    except Exception:
+        pass
+    finally:
+        stop.set()
+        try:
+            target.close()
+        except Exception:
+            pass
+
+
+# ---------------------------------------------------------------------------
+# Streamlit — proxy HTTP do lokalnego serwera (port 8501)
+# ---------------------------------------------------------------------------
 
 
 @app.route("/streamlit/", defaults={"path": ""})
 @app.route("/streamlit/<path:path>")
-def streamlit_proxy(path: str):
+def streamlit_http_proxy(path: str):
     """Proxy HTTP do serwera Streamlit uruchomionego na porcie 8501."""
     target = f"{STREAMLIT_BASE}/{path}"
     try:
@@ -314,7 +367,6 @@ def streamlit_proxy(path: str):
             stream=True,
             timeout=5,
         )
-        # Wyklucz nagłówki które Flask ustawi sam
         excluded_headers = {
             "content-encoding", "transfer-encoding", "connection",
             "content-length", "server",
