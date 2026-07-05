@@ -139,20 +139,25 @@ def not_found(e):
 
 
 # ---------------------------------------------------------------------------
-# Start
+# Inicjalizacja bazy — uruchamia się przy starcie (lokalnie i na Azure)
+# ---------------------------------------------------------------------------
+
+with app.app_context():
+    db.create_all()
+
+    # Stwórz domyślnego admina, jeśli nie istnieje
+    if not User.query.filter_by(username="admin").first():
+        admin = User(username="admin")
+        admin.set_password("admin123")
+        db.session.add(admin)
+        db.session.commit()
+        print("Utworzono domyślnego użytkownika: admin / admin123")
+
+
+# ---------------------------------------------------------------------------
+# Start (lokalny)
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-
-        # Stwórz domyślnego admina, jeśli nie istnieje
-        if not User.query.filter_by(username="admin").first():
-            admin = User(username="admin")
-            admin.set_password("admin123")
-            db.session.add(admin)
-            db.session.commit()
-            print("Utworzono domyślnego użytkownika: admin / admin123")
-
     port = int(os.getenv("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
