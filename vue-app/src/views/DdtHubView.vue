@@ -59,19 +59,20 @@
 <script setup>
 import { ref } from 'vue'
 
-const STREAMLIT_PORT = 8501
-const streamlitUrl = `http://localhost:${STREAMLIT_PORT}`
 const isAlive = ref(false)
 const lastCheck = ref(false)
 
 function openStreamlit() {
-  window.location.href = streamlitUrl
+  window.open('/streamlit/', '_blank')
 }
 
 async function checkStreamlit() {
   try {
-    await fetch(`http://localhost:${STREAMLIT_PORT}`, { mode: 'no-cors' })
-    isAlive.value = true
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 3000)
+    const res = await fetch('/streamlit/', { signal: controller.signal })
+    clearTimeout(timeout)
+    isAlive.value = res.ok || res.status === 200
   } catch {
     isAlive.value = false
   }

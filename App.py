@@ -5,15 +5,16 @@ import random
 from datetime import datetime, timedelta
 from functools import wraps
 
+import requests
 from dotenv import load_dotenv
-from flask import Flask, request, session, jsonify, send_from_directory
+from flask import Flask, request, session, jsonify, send_from_directory, Response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError, OperationalError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
-APP_VERSION = "v0.2.6"
+APP_VERSION = "v0.2.7"
 
 # ---------------------------------------------------------------------------
 # App & DB
@@ -288,6 +289,47 @@ AI_REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ai-re
 def serve_ai_report(filename: str):
     """Serwuje wygenerowane raporty HTML z katalogu ai-reports/."""
     return send_from_directory(AI_REPORTS_DIR, filename)
+
+
+# ---------------------------------------------------------------------------
+# Streamlit — proxy do lokalnego serwera Streamlit (port 8501)
+# ---------------------------------------------------------------------------
+
+STREAMLIT_PORT = 8501
+STREAMLIT_BASE = f"http://localhost:{STREAMLIT_PORT}"
+
+
+@app.route("/streamlit/", defaults={"path": ""})
+@app.route("/streamlit/<path:path>")
+def streamlit_proxy(path: str):
+    """Proxy HTTP do serwera Streamlit uruchomionego na porcie 8501."""
+    target = f"{STREAMLIT_BASE}/{path}"
+    try:
+        resp = requests.request(
+            method=request.method,
+            url=target,
+            headers={k: v for k, v in request.headers if k.lower() not in ("host",)},
+            data=request.get_data(),
+            cookies=request.cookies,
+            stream=True,
+            timeout=5,
+        )
+        # Wyklucz nagłówki które Flask ustawi sam
+        excluded_headers = {
+            "content-encoding", "transfer-encoding", "connection",
+            "content-length", "server",
+        }
+        headers = [
+            (k, v) for k, v in resp.headers.items()
+            if k.lower() not in excluded_headers
+        ]
+        return Response(
+            resp.iter_content(chunk_size=8192),
+            status=resp.status_code,
+            headers=headers,
+        )
+    except requests.exceptions.ConnectionError:
+        return jsonify({"error": "Streamlit nie jest dostępny"}), 502
 
 
 # ---------------------------------------------------------------------------
