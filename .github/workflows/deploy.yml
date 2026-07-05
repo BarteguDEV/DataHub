@@ -1,12 +1,9 @@
-# GitHub Actions workflow — deploy na Azure App Service (Python 3.12)
-# Automatycznie uruchamia się na push do gałęzi main.
+# GitHub Actions — deploy na Azure App Service (Python 3.12)
+# Wymagany sekret w GitHub: AZURE_WEBAPP_PUBLISH_PROFILE
 #
-# Wymagane sekrety w GitHub:
-#   AZURE_WEBAPP_PUBLISH_PROFILE  — profil publikacji z Azure App Service
-#
-# Azure App Service wymaga ustawienia w Application Settings:
-#   SECRET_KEY  — klucz do podpisywania sesji Flask
-#   DATABASE_URL — (opcjonalnie, domyślnie SQLite)
+# Azure App Service — Application Settings:
+#   SECRET_KEY  — klucz sesji Flask (wymagany)
+#   DATABASE_URL — opcjonalnie (domyślnie SQLite)
 
 name: Deploy do Azure App Service
 
@@ -16,7 +13,11 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: DataHub
+  # ──────────────────────────────────────────────────
+  # ZMIEŃ to na nazwę swojego App Service w Azure
+  # (pierwsza część URL-a: https://<NAZWA>.azurewebsites.net)
+  # ──────────────────────────────────────────────────
+  AZURE_WEBAPP_NAME: barteguapp
   PYTHON_VERSION: "3.12"
 
 jobs:
@@ -36,12 +37,42 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Paczkuj aplikację (bez niepotrzebnych plików)
+      - name: Przygotuj paczkę wdrożeniową
+        shell: bash
         run: |
           mkdir -p deploy
           cp -r App.py startup.sh requirements.txt runtime.txt templates deploy/
-          cd deploy
-          zip -r ../release.zip .
+          cd deploy && zip -r ../release.zip .
+
+      - name: Sprawdź konfigurację
+        shell: bash
+        run: |
+          APP_NAME="${{ env.AZURE_WEBAPP_NAME }}"
+          echo "Aplikacja: $APP_NAME"
+          echo "Python:    ${{ env.PYTHON_VERSION }}"
+
+          if [ "$APP_NAME" = "twoja-nazwa-aplikacji" ]; then
+            echo "::error::Nie zmieniłeś AZURE_WEBAPP_NAME w workflow!"
+            echo "::error::Edytuj plik .github/workflows/deploy.yml i ustaw"
+            echo "::error::AZURE_WEBAPP_NAME na nazwę swojego App Service."
+            echo "::error::"
+            echo "::error::Przykład: jeśli adres to https://datahub-app.azurewebsites.net"
+            echo "::error::to wpisz: AZURE_WEBAPP_NAME: datahub-app"
+            exit 1
+          fi
+          echo "Nazwa aplikacji zmieniona ✓"
+
+      - name: Sprawdź sekret AZURE_WEBAPP_PUBLISH_PROFILE
+        env:
+          PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        shell: bash
+        run: |
+          if [ -z "$PUBLISH_PROFILE" ]; then
+            echo "::error::Brak sekretu AZURE_WEBAPP_PUBLISH_PROFILE w GitHubie."
+            echo "::error::Dodaj go w: Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          echo "Sekret AZURE_WEBAPP_PUBLISH_PROFILE znaleziony ✓"
 
       - name: Deploy na Azure App Service
         uses: azure/webapps-deploy@v3
