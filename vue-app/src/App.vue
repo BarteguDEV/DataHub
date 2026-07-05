@@ -1,14 +1,84 @@
 <template>
-  <router-view />
+  <div class="app-root">
+    <!-- Widok logowania (brak layoutu — pełny ekran) -->
+    <template v-if="route.name === 'Login'">
+      <router-view />
+    </template>
+
+    <!-- Główna aplikacja (sidebar + header + treść) -->
+    <template v-else>
+      <div class="app-shell">
+        <AppSidebar />
+        <div class="app-main">
+          <AppHeader />
+          <main class="main-content">
+            <router-view v-slot="{ Component, route: r }">
+              <transition name="page" mode="out-in">
+                <component :is="Component" :key="r.path" />
+              </transition>
+            </router-view>
+          </main>
+        </div>
+      </div>
+    </template>
+  </div>
 </template>
 
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Inter', -apple-system, sans-serif;
-  background: #0b0d11;
-  color: #e8eaed;
+<script setup>
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAuth } from '@/stores/auth'
+import AppSidebar from '@/components/AppSidebar.vue'
+import AppHeader from '@/components/AppHeader.vue'
+
+const route = useRoute()
+const { initialize } = useAuth()
+
+onMounted(async () => {
+  await initialize()
+})
+</script>
+
+<style scoped>
+.app-root {
   min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
+  background: var(--bg-primary);
+}
+
+/* Layout po zalogowaniu */
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 40px;
+}
+
+/* Transition między stronami */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-12px);
 }
 </style>
