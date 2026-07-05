@@ -42,7 +42,7 @@
 
       <!-- Użytkownik -->
       <div class="header-user">
-        <button class="user-btn" @click="showMenu = !showMenu" title="Menu użytkownika">
+        <button class="user-btn" @click.stop="showMenu = !showMenu" title="Menu użytkownika">
           <span class="user-avatar-sm">{{ user.initials }}</span>
           <span class="user-info-sm">
             <span class="user-name-sm">{{ user.username }}</span>
@@ -63,7 +63,7 @@
         </button>
 
         <!-- Dropdown -->
-        <div v-if="showMenu" class="user-dropdown">
+        <div v-if="showMenu" class="user-dropdown" @click.stop>
           <div class="dropdown-header">
             <div class="dropdown-avatar">{{ user.initials }}</div>
             <div>
@@ -72,7 +72,7 @@
             </div>
           </div>
           <div class="dropdown-divider"></div>
-          <button class="dropdown-item" @click="handleLogout">
+          <button class="dropdown-item" @click.stop="handleLogout">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
@@ -83,13 +83,10 @@
       </div>
     </div>
   </header>
-
-  <!-- Overlay do zamykania dropdownu -->
-  <div v-if="showMenu" class="dropdown-overlay" @click="showMenu = false"></div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/stores/auth'
 import { useVersion } from '@/stores/version'
@@ -136,7 +133,18 @@ function handleLogout() {
 onMounted(async () => {
   backendOnline.value = !!state.isAuthenticated
   await fetchVersion()
+  document.addEventListener('click', closeDropdown)
 })
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdown)
+})
+
+function closeDropdown(e) {
+  if (showMenu.value) {
+    showMenu.value = false
+  }
+}
 
 </script>
 
@@ -390,13 +398,6 @@ onMounted(async () => {
 .dropdown-item:hover {
   background: var(--bg-hover);
   color: #ff5252;
-}
-
-/* Overlay */
-.dropdown-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 150;
 }
 
 /* Transitions */
