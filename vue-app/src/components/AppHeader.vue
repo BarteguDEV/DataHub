@@ -257,15 +257,23 @@ onMounted(async () => {
   position: relative;
   display: flex;
   align-items: center;
+}
+
+.user-btn {
+  display: flex;
+  align-items: center;
   gap: 10px;
   padding: 6px 10px 6px 6px;
   border-radius: 8px;
+  background: none;
+  border: 1px solid transparent;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
   transition: background 0.15s;
-  border: 1px solid transparent;
 }
 
-.header-user:hover {
+.user-btn:hover {
   background: var(--bg-hover);
   border-color: var(--border-color);
 }

@@ -8,12 +8,12 @@ from functools import wraps
 from dotenv import load_dotenv
 from flask import Flask, request, session, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
-APP_VERSION = "v0.2.3"
+APP_VERSION = "v0.2.5"
 
 # ---------------------------------------------------------------------------
 # App & DB
@@ -314,7 +314,13 @@ def not_found(_e):
 # ---------------------------------------------------------------------------
 
 with app.app_context():
-    db.create_all()
+    # Race condition między workerami gunicorna — SQLite nie lubi
+    # równoczesnego CREATE TABLE. Wyłapujemy błąd i idziemy dalej.
+    try:
+        db.create_all()
+    except OperationalError:
+        pass
+
     try:
         admin = User(username="admin")
         admin.set_password("admin123")
