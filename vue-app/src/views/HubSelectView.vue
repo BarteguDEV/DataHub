@@ -143,19 +143,24 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
         </svg>
-        <span>v0.2.0 DataHub</span>
+        <span>{{ appVersion }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/stores/auth'
+import { useVersion } from '@/stores/version'
 
 const router = useRouter()
 const { state } = useAuth()
+const { appVersion, fetchVersion } = useVersion()
 const user = state
+
+onMounted(fetchVersion)
 
 function navigate(name) {
   router.push({ name })

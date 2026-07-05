@@ -31,10 +31,13 @@
     </div>
 
     <div class="header-right">
-      <!-- Status backendu -->
+      <!-- Status backendu + wersja -->
       <div class="header-chip backend-indicator" :class="{ online: backendOnline }">
         <span class="chip-dot"></span>
         <span class="chip-label">API</span>
+      </div>
+      <div class="header-chip version-chip">
+        <span class="chip-label">{{ appVersion }}</span>
       </div>
 
       <!-- Użytkownik -->
@@ -89,10 +92,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/stores/auth'
+import { useVersion } from '@/stores/version'
 
 const route = useRoute()
 const router = useRouter()
 const { state, logout } = useAuth()
+const { appVersion, fetchVersion } = useVersion()
 
 const showMenu = ref(false)
 const backendOnline = ref(false)
@@ -123,9 +128,9 @@ async function handleLogout() {
   window.location.href = '/login'
 }
 
-onMounted(() => {
-  // Backend online jeśli odpowiedział na /api/me (już sprawdzone w inicjalizacji)
+onMounted(async () => {
   backendOnline.value = !!state.isAuthenticated
+  await fetchVersion()
 })
 
 </script>
@@ -230,6 +235,11 @@ onMounted(() => {
 
 .backend-indicator.online .chip-dot {
   background: #00c853;
+}
+
+.version-chip {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px;
 }
 
 .chip-label {

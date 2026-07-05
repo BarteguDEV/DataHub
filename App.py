@@ -13,6 +13,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
+APP_VERSION = "v0.2.0"
+
 # ---------------------------------------------------------------------------
 # App & DB
 # ---------------------------------------------------------------------------
@@ -129,7 +131,11 @@ def api_me():
 
 @app.route("/api/health")
 def api_health():
-    return jsonify({"status": "ok", "service": "DataHub API"})
+    return jsonify({
+        "status": "ok",
+        "service": "DataHub API",
+        "version": APP_VERSION,
+    })
 
 
 # ---------------------------------------------------------------------------

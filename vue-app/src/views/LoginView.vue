@@ -86,7 +86,7 @@
 
         <!-- Stopka -->
         <div class="login-footer">
-          <span class="footer-version">v0.1.0 POC</span>
+          <span class="footer-version">{{ appVersion }}</span>
           <span class="footer-env">Flask + Vue.js</span>
         </div>
       </div>
@@ -111,17 +111,22 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/stores/auth'
+import { useVersion } from '@/stores/version'
 
 const router = useRouter()
 const { login } = useAuth()
+
+const { appVersion, fetchVersion } = useVersion()
 
 const username = ref('')
 const password = ref('')
 const error = ref('')
 const loggingIn = ref(false)
+
+onMounted(fetchVersion)
 
 const canLogin = computed(() => username.value.trim().length > 0 && password.value.length > 0)
 
