@@ -1,69 +1,210 @@
 <template>
   <div class="hub-view">
+    <!-- Header -->
     <div class="hub-section-header">
       <h1 class="section-title">Developer Dev Tools</h1>
       <p class="section-desc">
         Aplikacja Streamlit z modułami Jira, Confluence, IAM, TeamCity i Informatica.
-        Kliknij poniżej, aby uruchomić.
+        Wybierz tryb podglądu poniżej.
       </p>
     </div>
 
-    <div class="streamlit-launch">
-      <div class="launch-card">
-        <div class="launch-icon">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00c853" stroke-width="1.5">
-            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+    <!-- Przyciski trybu -->
+    <div class="mode-toggle">
+      <button
+        class="mode-btn"
+        :class="{ active: mode === 'embed' }"
+        @click="mode = 'embed'"
+        :disabled="loading"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        Osadzony (iframe)
+      </button>
+      <button
+        class="mode-btn"
+        :class="{ active: mode === 'launch' }"
+        @click="mode = 'launch'"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Karta uruchamiania
+      </button>
+    </div>
+
+    <!-- TRYB: Osadzony iframe -->
+    <template v-if="mode === 'embed'">
+      <!-- Status bar -->
+      <div class="embed-status">
+        <span class="status-dot" :class="statusClass"></span>
+        <span>{{ statusText }}</span>
+        <button
+          v-if="iframeError"
+          class="btn-retry"
+          @click="reloadIframe"
+        >
+          {{ isExternal ? 'Resetuj do lokalnego' : 'Spróbuj zewnętrznego' }}
+        </button>
+        <a
+          :href="streamlitSource"
+          target="_blank"
+          class="btn-external"
+          title="Otwórz w nowej karcie"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
           </svg>
-        </div>
-        <h2>DDT — Streamlit</h2>
-        <p>Pełna aplikacja DDT dostępna jako osobna aplikacja Streamlit.<br>
-        Zawiera: Jira, Confluence, IAM, TeamCity, Informatica.<br>
-        Dane wyświetlane przez <code>st.write()</code>, <code>st.dataframe()</code>, <code>st.plotly_chart()</code>.</p>
-
-        <div class="launch-actions">
-          <button class="btn-launch" @click="openStreamlit">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-            Otwórz DDT Streamlit
-          </button>
-
-          <button
-            class="btn-check"
-            @click="checkStreamlit"
-            :class="{ alive: isAlive }"
-          >
-            <span class="check-dot"></span>
-            {{ isAlive ? 'Streamlit online' : 'Sprawdź status' }}
-          </button>
-        </div>
-
-        <div v-if="lastCheck" class="check-result" :class="{ error: !isAlive }">
-          {{ isAlive ? '✓ Serwer Streamlit odpowiada' : '✗ Serwer nie odpowiada — uruchom: streamlit run ddt_streamlit_app.py --server.port 8501' }}
-        </div>
+        </a>
       </div>
 
-      <div class="module-list">
-        <div class="mini-card" v-for="mod in modules" :key="mod.name">
-          <div class="mini-icon" v-html="mod.icon"></div>
-          <div>
-            <div class="mini-name">{{ mod.name }}</div>
-            <div class="mini-desc">{{ mod.desc }}</div>
+      <!-- Loader -->
+      <div v-if="loading" class="embed-loader">
+        <div class="loader-spinner"></div>
+        <span>Ładowanie Streamlit…</span>
+      </div>
+
+      <!-- Iframe -->
+      <div class="embed-container" :class="{ hidden: loading }">
+        <iframe
+          ref="iframeRef"
+          :src="streamlitSource"
+          class="streamlit-iframe"
+          frameborder="0"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          @load="onIframeLoad"
+          @error="onIframeError"
+        ></iframe>
+      </div>
+    </template>
+
+    <!-- TRYB: Karta uruchamiania (dotychczasowy widok) -->
+    <template v-if="mode === 'launch'">
+      <div class="streamlit-launch">
+        <div class="launch-card">
+          <div class="launch-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00c853" stroke-width="1.5">
+              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+            </svg>
+          </div>
+          <h2>DDT — Streamlit</h2>
+          <p>Pełna aplikacja DDT dostępna jako osobna aplikacja Streamlit.<br>
+          Zawiera: Jira, Confluence, IAM, TeamCity, Informatica.<br>
+          Dane wyświetlane przez <code>st.write()</code>, <code>st.dataframe()</code>, <code>st.plotly_chart()</code>.</p>
+
+          <div class="launch-actions">
+            <button class="btn-launch" @click="openStreamlit">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              Otwórz DDT Streamlit
+            </button>
+
+            <button
+              class="btn-check"
+              @click="checkStreamlit"
+              :class="{ alive: isAlive }"
+            >
+              <span class="check-dot"></span>
+              {{ isAlive ? 'Streamlit online' : 'Sprawdź status' }}
+            </button>
+          </div>
+
+          <div v-if="lastCheck" class="check-result" :class="{ error: !isAlive }">
+            {{ isAlive ? '✓ Serwer Streamlit odpowiada' : '✗ Serwer nie odpowiada — uruchom: streamlit run streamlit_app.py --server.port 8501' }}
+          </div>
+        </div>
+
+        <div class="module-list">
+          <div class="mini-card" v-for="mod in modules" :key="mod.name">
+            <div class="mini-icon" v-html="mod.icon"></div>
+            <div>
+              <div class="mini-name">{{ mod.name }}</div>
+              <div class="mini-desc">{{ mod.desc }}</div>
+            </div>
           </div>
         </div>
       </div>
+    </template>
+
+    <!-- Stopka -->
+    <div class="embed-footer">
+      <span class="footer-ver">DataHub Streamlit | v0.3.0</span>
+      <span class="footer-hint">{{ streamlitSource }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
+// ---- Konfiguracja ----
+// Jeśli Streamlit proxy nie działa, ustaw zewnętrzny URL (np. Streamlit Community Cloud)
+const STREAMLIT_LOCAL = '/streamlit/'
+const STREAMLIT_EXTERNAL = import.meta.env.VITE_STREAMLIT_URL || ''
+
+// ---- Stan ----
+const mode = ref('embed')           // 'embed' | 'launch'
+const loading = ref(true)
+const iframeError = ref(false)
+const useExternal = ref(false)
 const isAlive = ref(false)
 const lastCheck = ref(false)
+const iframeRef = ref(null)
+
+const streamlitSource = computed(() =>
+  useExternal.value && STREAMLIT_EXTERNAL
+    ? STREAMLIT_EXTERNAL
+    : STREAMLIT_LOCAL
+)
+
+const isExternal = computed(() =>
+  useExternal.value && !!STREAMLIT_EXTERNAL
+)
+
+const statusClass = computed(() => {
+  if (loading.value) return 'loading'
+  if (iframeError.value) return 'error'
+  return 'online'
+})
+
+const statusText = computed(() => {
+  if (loading.value) return 'Ładowanie Streamlit…'
+  if (iframeError.value) return 'Streamlit nie odpowiada — sprawdź czy serwer działa'
+  return `Streamlit online${useExternal.value ? ' (zewnętrzny)' : ' (lokalny proxy)'}`
+})
+
+// ---- Metody ----
 
 function openStreamlit() {
   window.open('/streamlit/', '_blank')
+}
+
+function onIframeLoad() {
+  loading.value = false
+  iframeError.value = false
+}
+
+function onIframeError() {
+  loading.value = false
+  iframeError.value = true
+}
+
+function reloadIframe() {
+  if (useExternal.value) {
+    useExternal.value = false
+  } else if (STREAMLIT_EXTERNAL) {
+    useExternal.value = true
+  }
+  // Wymuszenie przeładowania iframe przez zmianę klucza
+  loading.value = true
+  iframeError.value = false
+  // Force re-render iframe
+  const iframe = iframeRef.value
+  if (iframe) {
+    iframe.src = streamlitSource.value
+  }
 }
 
 async function checkStreamlit() {
@@ -79,6 +220,11 @@ async function checkStreamlit() {
   lastCheck.value = true
 }
 
+// Auto-check on mount (dla trybu launch)
+onMounted(() => {
+  checkStreamlit()
+})
+
 const modules = [
   { name: 'Jira', desc: 'Zadania, sprinty, workflow', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2684ff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>' },
   { name: 'Confluence', desc: 'Dokumentacja i wiki', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00b8d9" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>' },
@@ -90,28 +236,194 @@ const modules = [
 
 <style scoped>
 .hub-view {
-  max-width: 900px;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.hub-section-header {
-  margin-bottom: 28px;
+/* Header */
+.hub-section-header { margin-bottom: 4px; }
+.section-title { font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0; }
+.section-desc { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; max-width: 600px; }
+
+/* Mode toggle */
+.mode-toggle {
+  display: flex;
+  gap: 8px;
 }
 
-.section-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 8px 0;
-}
-
-.section-desc {
-  font-size: 14px;
-  line-height: 1.6;
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  margin: 0;
-  max-width: 600px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Inter', sans-serif;
 }
 
+.mode-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.mode-btn.active {
+  background: rgba(0, 200, 83, 0.08);
+  border-color: #00c853;
+  color: #00c853;
+}
+
+.mode-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Embed status bar */
+.embed-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff5252;
+  flex-shrink: 0;
+}
+
+.status-dot.online {
+  background: #00c853;
+}
+
+.status-dot.loading {
+  background: #ff9100;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.status-dot.error {
+  background: #ff5252;
+}
+
+.btn-retry {
+  margin-left: auto;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.15s;
+}
+
+.btn-retry:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.btn-external {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+.btn-external:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* Loader */
+.embed-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 80px 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.loader-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-color);
+  border-top-color: #00c853;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Iframe container */
+.embed-container {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.embed-container.hidden {
+  display: none;
+}
+
+.streamlit-iframe {
+  width: 100%;
+  height: 70vh;
+  min-height: 500px;
+  display: block;
+  background: #fff;
+}
+
+/* Footer */
+.embed-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.footer-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* ============ TRYB LAUNCH (dotychczasowy widok) ============ */
 .streamlit-launch {
   display: flex;
   flex-direction: column;

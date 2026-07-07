@@ -18,6 +18,14 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': 'http://localhost:5000',
+      '/streamlit': {
+        target: 'http://localhost:5000',
+        ws: true,
+      },
+      '/_stcore': {
+        target: 'http://localhost:5000',
+        ws: true,
+      },
     },
   },
 })
