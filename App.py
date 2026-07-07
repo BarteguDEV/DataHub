@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.7"
+APP_VERSION = "v0.4.8"
 
 # ===========================================================================
 # JWT Config
@@ -525,44 +525,53 @@ async def streamlit_http_proxy(request: Request, path: str = ""):
 
 
 # ===========================================================================
-# Streamlit — WebSocket proxy
+# Streamlit — WebSocket proxy (async przez ThreadPoolExecutor)
 # ===========================================================================
+
+import concurrent.futures
+
+_ws_thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=10)
 
 
 @app.websocket("/_stcore/{path:path}")
 @app.websocket("/streamlit/_stcore/{path:path}")
 async def streamlit_ws_proxy(websocket: WebSocket, path: str):
-    """Proxy WebSocket do Streamlit — czysty async, bez gevent."""
+    """Proxy WebSocket do Streamlit — async, blocking I/O w thread pool."""
     await websocket.accept()
     target_url = f"{STREAMLIT_WS_BASE}/streamlit/_stcore/{path}"
 
     try:
         target = ws_client.create_connection(target_url, timeout=5)
-    except Exception:
+    except Exception as exc:
+        print(f"[ws] Connect error to {target_url}: {type(exc).__name__}")
         await websocket.close(code=1011)
         return
 
     stop = asyncio.Event()
+    loop = asyncio.get_event_loop()
 
     async def relay_to_client():
-        """Streamlit → Client."""
+        """Streamlit → Client (blocking recv w thread pool)."""
         try:
             while not stop.is_set():
-                data = target.recv()
+                data = await loop.run_in_executor(_ws_thread_pool, target.recv)
                 if data is None:
                     break
-                await websocket.send_bytes(data)
+                if isinstance(data, bytes):
+                    await websocket.send_bytes(data)
+                else:
+                    await websocket.send_text(data)
         except Exception:
             pass
         finally:
             stop.set()
 
     async def relay_to_target():
-        """Client → Streamlit."""
+        """Client → Streamlit (blocking send w thread pool)."""
         try:
             while not stop.is_set():
                 data = await websocket.receive_bytes()
-                target.send(data)
+                await loop.run_in_executor(_ws_thread_pool, target.send, data)
         except WebSocketDisconnect:
             pass
         except Exception:
