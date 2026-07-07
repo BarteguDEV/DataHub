@@ -1,6 +1,6 @@
 """
 DataHub — FastAPI backend.
-- JWT auth (python-jose + passlib bcrypt)
+- JWT auth (python-jose + passlib pbkdf2_sha256)
 - WebSocket proxy do Streamlit
 - HTTP proxy do Streamlit
 - Vue.js SPA frontend (static)
@@ -55,7 +55,7 @@ SECRET_KEY = os.getenv("JWT_SECRET", os.urandom(32).hex())
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8h
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
 
 # ===========================================================================
@@ -585,12 +585,28 @@ if os.path.isdir(AI_REPORTS_DIR):
 
 
 # ===========================================================================
-# Vue.js SPA — statyczne pliki
+# Vue.js SPA — statyczne pliki + catch-all fallback
 # ===========================================================================
 
 VUE_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "vue")
 if os.path.isdir(VUE_DIST):
-    app.mount("/", StaticFiles(directory=VUE_DIST, html=True), name="vue-spa")
+    # Serwuj pliki statyczne Vue
+    app.mount("/assets", StaticFiles(directory=os.path.join(VUE_DIST, "assets")), name="vue-assets")
+
+    from fastapi.responses import FileResponse
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def vue_spa(full_path: str):
+        """SPA fallback — wszystko co nie jest API → index.html."""
+        file_path = os.path.join(VUE_DIST, full_path)
+        if full_path and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        index = os.path.join(VUE_DIST, "index.html")
+        if os.path.isfile(index):
+            return FileResponse(index)
+        return JSONResponse({"error": "Vue app not built"}, status_code=404)
+else:
+    print(f"WARNING: Vue dist not found at {VUE_DIST}")
 
 
 # ===========================================================================
