@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.4"
+APP_VERSION = "v0.4.5"
 
 # ===========================================================================
 # JWT Config
@@ -202,6 +202,7 @@ def _start_streamlit():
         "--server.enableCORS", "false",
         "--server.enableXsrfProtection", "false",
         "--server.enableWebsocketCompression", "false",
+        "--server.baseUrlPath=streamlit",
         "--browser.gatherUsageStats", "false",
     ]
     try:
@@ -494,7 +495,7 @@ _httpx_client = httpx.AsyncClient(timeout=30)
 @app.api_route("/streamlit/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
 async def streamlit_http_proxy(request: Request, path: str = ""):
     """Proxy HTTP dla Streamlit — współdzielony klient, streaming bez zamykania."""
-    target_url = f"{STREAMLIT_BASE}/{path}"
+    target_url = f"{STREAMLIT_BASE}/streamlit/{path}"
     try:
         body = await request.body()
         req = _httpx_client.build_request(
@@ -533,7 +534,7 @@ async def streamlit_http_proxy(request: Request, path: str = ""):
 async def streamlit_ws_proxy(websocket: WebSocket, path: str):
     """Proxy WebSocket do Streamlit — czysty async, bez gevent."""
     await websocket.accept()
-    target_url = f"{STREAMLIT_WS_BASE}/_stcore/{path}"
+    target_url = f"{STREAMLIT_WS_BASE}/streamlit/_stcore/{path}"
 
     try:
         target = ws_client.create_connection(target_url, timeout=5)
