@@ -5,20 +5,17 @@
       <router-view />
     </template>
 
-    <!-- Główna aplikacja (sidebar + header + treść) -->
+    <!-- Główna aplikacja (header + treść, brak sidebara) -->
     <template v-else>
       <div class="app-shell">
-        <AppSidebar />
-        <div class="app-main">
-          <AppHeader />
-          <main class="main-content">
-            <router-view v-slot="{ Component, route: r }">
-              <transition name="page" mode="out-in">
-                <component :is="Component" :key="r.path" />
-              </transition>
-            </router-view>
-          </main>
-        </div>
+        <AppHeader />
+        <main class="main-content">
+          <router-view v-slot="{ Component, route: r }">
+            <transition name="page" mode="out-in">
+              <component :is="Component" :key="r.path" />
+            </transition>
+          </router-view>
+        </main>
       </div>
     </template>
   </div>
@@ -28,7 +25,6 @@
 import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuth } from '@/stores/auth'
-import AppSidebar from '@/components/AppSidebar.vue'
 import AppHeader from '@/components/AppHeader.vue'
 
 const route = useRoute()
@@ -45,16 +41,8 @@ onMounted(async () => {
   background: var(--bg-primary);
 }
 
-/* Layout po zalogowaniu */
+/* Layout po zalogowaniu — brak sidebara */
 .app-shell {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.app-main {
-  flex: 1;
-  margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
   min-height: 100vh;

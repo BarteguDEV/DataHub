@@ -1,19 +1,19 @@
 <template>
   <header class="app-header">
     <div class="header-left">
-      <!-- Przycisk powrotu / home -->
+      <!-- Przycisk powrotu do hub select -->
       <button
         v-if="showBack"
         class="header-btn back-btn"
         @click="goBack"
-        title="Powrót"
+        title="Powrót do wyboru huba"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
         </svg>
       </button>
 
-      <!-- Breadcrumb / nazwa huba -->
+      <!-- Breadcrumb / nawigacja -->
       <div class="header-breadcrumb">
         <router-link to="/" class="crumb-home" title="Wybierz hub">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -27,6 +27,30 @@
           </svg>
         </span>
         <span v-if="hubName" class="crumb-current">{{ hubName }}</span>
+      </div>
+
+      <!-- Szybki przełącznik hubów (zastępuje sidebar) -->
+      <div class="hub-switcher" v-if="showBack">
+        <button class="hub-switcher-btn" @click.stop="showHubMenu = !showHubMenu" title="Przełącz hub">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </button>
+        <div v-if="showHubMenu" class="hub-dropdown" @click.stop>
+          <router-link
+            v-for="h in hubs"
+            :key="h.name"
+            :to="{ name: h.name }"
+            class="hub-dropdown-item"
+            :class="{ active: route.name === h.name }"
+            @click="showHubMenu = false"
+          >
+            <span class="hub-dot" :style="{ background: h.color }"></span>
+            <span class="hub-label">{{ h.label }}</span>
+            <span class="hub-badge" v-if="h.badge">{{ h.badge }}</span>
+          </router-link>
+        </div>
       </div>
     </div>
 
@@ -97,7 +121,14 @@ const { state, logout } = useAuth()
 const { appVersion, fetchVersion } = useVersion()
 
 const showMenu = ref(false)
+const showHubMenu = ref(false)
 const backendOnline = ref(false)
+
+const hubs = [
+  { name: 'DdtHub', label: 'DDT — Dev Tools', color: '#00c853', badge: 'Streamlit' },
+  { name: 'ApexHub', label: 'APEX — BI', color: '#ff9100', badge: 'KPI' },
+  { name: 'AiHub', label: 'AI Innovation Lab', color: '#536dfe', badge: 'New' },
+]
 
 const showBack = computed(() => {
   return route.name !== 'HubSelect'
@@ -135,9 +166,8 @@ onUnmounted(() => {
 })
 
 function closeDropdown(e) {
-  if (showMenu.value) {
-    showMenu.value = false
-  }
+  if (showMenu.value) showMenu.value = false
+  if (showHubMenu.value) showHubMenu.value = false
 }
 
 </script>
@@ -404,5 +434,90 @@ function closeDropdown(e) {
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+/* Hub switcher — zastępuje sidebar */
+.hub-switcher {
+  position: relative;
+  margin-left: 8px;
+}
+
+.hub-switcher-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.hub-switcher-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.hub-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 200px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  z-index: 200;
+  padding: 6px;
+}
+
+.hub-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.hub-dropdown-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.hub-dropdown-item.active {
+  background: var(--bg-hover);
+  color: var(--accent-primary);
+}
+
+.hub-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hub-label {
+  flex: 1;
+}
+
+.hub-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
 }
 </style>

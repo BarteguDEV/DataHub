@@ -130,7 +130,7 @@
 
     <!-- Stopka -->
     <div class="embed-footer">
-      <span class="footer-ver">DataHub Streamlit | v0.3.0</span>
+      <span class="footer-ver">DataHub Streamlit | v0.5.0</span>
       <span class="footer-hint">{{ streamlitSource }}</span>
     </div>
   </div>

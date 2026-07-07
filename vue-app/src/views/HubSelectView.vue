@@ -28,92 +28,41 @@
 
     <!-- Siatka hubów -->
     <div class="hub-grid">
-      <!-- DDT -->
-      <article class="hub-tile ddt" @click="navigate('DdtHub')">
+      <article
+        v-for="hub in hubs"
+        :key="hub.name"
+        class="hub-tile"
+        :class="hub.cls"
+        @click="navigate(hub.route)"
+      >
         <div class="tile-accent"></div>
         <div class="tile-content">
-          <div class="tile-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-            </svg>
-          </div>
-          <h2 class="tile-title">DDT — Developer Dev Tools</h2>
-          <p class="tile-desc">
-            Integracje z Jira, Confluence, IAM, TeamCity, Informatica PowerCenter
-            oraz zestaw narzędzi developerskich uruchamianych przez Streamlit.
-          </p>
-          <div class="tile-stats">
-            <span class="tile-stat">
-              <strong>8</strong> modułów
-            </span>
-            <span class="tile-stat">
-              <strong>Streamlit</strong>
-            </span>
-          </div>
-          <div class="tile-footer">
-            <span class="tile-action">Przejdź do huba</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
-            </svg>
-          </div>
-        </div>
-        <div class="tile-glow"></div>
-      </article>
+          <div class="tile-icon" v-html="hub.icon"></div>
+          <h2 class="tile-title">{{ hub.title }}</h2>
+          <p class="tile-desc">{{ hub.desc }}</p>
 
-      <!-- APEX -->
-      <article class="hub-tile apex" @click="navigate('ApexHub')">
-        <div class="tile-accent"></div>
-        <div class="tile-content">
-          <div class="tile-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
-            </svg>
+          <!-- Lista modułów z autorami i wersjami -->
+          <div class="module-list">
+            <div
+              v-for="mod in hub.modules"
+              :key="mod.name"
+              class="module-row"
+            >
+              <span class="module-name">{{ mod.name }}</span>
+              <span class="module-meta">
+                <span class="module-author" :title="'Autor: ' + mod.author">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  {{ mod.author }}
+                </span>
+                <span class="module-version">{{ mod.version }}</span>
+                <span class="module-status" :class="mod.status">{{ mod.status }}</span>
+              </span>
+            </div>
           </div>
-          <h2 class="tile-title">APEX — Business Intelligence</h2>
-          <p class="tile-desc">
-            Dashboardy KPI, raporty codzienne, statystyki systemowe i helicopter view
-            na całą organizację. Dane z Oracle i Snowflake.
-          </p>
-          <div class="tile-stats">
-            <span class="tile-stat">
-              <strong>24</strong> dashboardy
-            </span>
-            <span class="tile-stat">
-              <strong>Oracle + Snowflake</strong>
-            </span>
-          </div>
-          <div class="tile-footer">
-            <span class="tile-action">Przejdź do huba</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
-            </svg>
-          </div>
-        </div>
-        <div class="tile-glow"></div>
-      </article>
 
-      <!-- AI -->
-      <article class="hub-tile ai" @click="navigate('AiHub')">
-        <div class="tile-accent"></div>
-        <div class="tile-content">
-          <div class="tile-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/>
-            </svg>
-          </div>
-          <h2 class="tile-title">AI Innovation Lab</h2>
-          <p class="tile-desc">
-            Koncepty AI zgodne z regulacjami bankowymi, raporty HTML, eksperymenty
-            i rozwiązania do użytku wewnętrznego.
-          </p>
-          <div class="tile-stats">
-            <span class="tile-stat">
-              <strong>8</strong> konceptów
-            </span>
-            <span class="tile-stat">
-              <strong>Raporty HTML</strong>
-            </span>
-          </div>
           <div class="tile-footer">
             <span class="tile-action">Przejdź do huba</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -159,6 +108,52 @@ const router = useRouter()
 const { state } = useAuth()
 const { appVersion, fetchVersion } = useVersion()
 const user = state
+
+const hubs = [
+  {
+    name: 'DDT',
+    cls: 'ddt',
+    route: 'DdtHub',
+    title: 'DDT — Developer Dev Tools',
+    desc: 'Integracje z Jira, Confluence, IAM, TeamCity, Informatica PowerCenter oraz zestaw narzędzi developerskich uruchamianych przez Streamlit.',
+    icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+    modules: [
+      { name: 'Streamlit POC', author: 'Bartegu', version: 'v0.5.0', status: 'active' },
+      { name: 'Jira Integration', author: 'Bartegu', version: 'v2.1.0', status: 'active' },
+      { name: 'Confluence Sync', author: 'M. Kowalski', version: 'v1.0.3', status: 'active' },
+      { name: 'IAM Tools', author: 'A. Nowak', version: 'v0.8.1', status: 'beta' },
+      { name: 'TeamCity Dashboard', author: 'Bartegu', version: 'v1.2.0', status: 'active' },
+      { name: 'Informatica PowerCenter', author: 'P. Adamski', version: 'v3.0.0', status: 'active' },
+    ],
+  },
+  {
+    name: 'APEX',
+    cls: 'apex',
+    route: 'ApexHub',
+    title: 'APEX — Business Intelligence',
+    desc: 'Dashboardy KPI, raporty codzienne, statystyki systemowe i helicopter view na całą organizację. Dane z Oracle i Snowflake.',
+    icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
+    modules: [
+      { name: 'KPI Dashboard', author: 'M. Kowalski', version: 'v4.2.1', status: 'active' },
+      { name: 'Oracle Reports', author: 'P. Adamski', version: 'v2.0.0', status: 'active' },
+      { name: 'Snowflake Analytics', author: 'Bartegu', version: 'v1.5.0', status: 'active' },
+      { name: 'SLA Monitor', author: 'M. Kowalski', version: 'v1.1.0', status: 'active' },
+    ],
+  },
+  {
+    name: 'AI',
+    cls: 'ai',
+    route: 'AiHub',
+    title: 'AI Innovation Lab',
+    desc: 'Koncepty AI zgodne z regulacjami bankowymi, raporty HTML, eksperymenty i rozwiązania do użytku wewnętrznego.',
+    icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>',
+    modules: [
+      { name: 'SQL Lineage', author: 'Bartegu', version: 'v0.3.0', status: 'alpha' },
+      { name: 'Auto Test Generator', author: 'A. Nowak', version: 'v0.2.0', status: 'alpha' },
+      { name: 'Data Mapping', author: 'Bartegu', version: 'v0.1.0', status: 'concept' },
+    ],
+  },
+]
 
 onMounted(fetchVersion)
 
@@ -318,6 +313,94 @@ function navigate(name) {
 .tile-stat strong {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+/* Lista modułów w karcie */
+.module-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.module-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: var(--bg-hover);
+  transition: background 0.15s;
+}
+
+.module-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.module-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.module-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.module-author {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.module-author svg {
+  opacity: 0.5;
+}
+
+.module-version {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+.module-status {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.module-status.active {
+  background: rgba(0, 200, 83, 0.12);
+  color: #00c853;
+}
+
+.module-status.beta {
+  background: rgba(255, 145, 0, 0.12);
+  color: #ff9100;
+}
+
+.module-status.alpha {
+  background: rgba(83, 109, 254, 0.12);
+  color: #536dfe;
+}
+
+.module-status.concept {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
 }
 
 .tile-footer {

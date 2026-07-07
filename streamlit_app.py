@@ -18,16 +18,27 @@ st.title("🧪 Streamlit — Test komponentów w iframe")
 st.markdown("---")
 
 # ===========================================================================
-# Zakładki (tabs)
+# Zakładki (ręczny przełącznik zamiast st.tabs — stabilniejszy w iframe)
 # ===========================================================================
-tab_intro, tab_interakcja, tab_dane, tab_wykresy, tab_symulacja = st.tabs([
-    "ℹ️ Info", "🖱️ Interakcja", "📊 Dane", "📈 Wykresy", "⏳ Symulacja"
-])
+TAB_NAMES = ["ℹ️ Info", "🖱️ Interakcja", "📊 Dane", "📈 Wykresy", "⏳ Symulacja"]
+
+if "tab_idx" not in st.session_state:
+    st.session_state.tab_idx = 0
+
+cols = st.columns(len(TAB_NAMES))
+for i, (col, name) in enumerate(zip(cols, TAB_NAMES)):
+    with col:
+        if st.button(name, use_container_width=True,
+                     type="primary" if st.session_state.tab_idx == i else "secondary"):
+            st.session_state.tab_idx = i
+            st.rerun()
+
+st.markdown("<hr style='margin-top: 0;'>", unsafe_allow_html=True)
 
 # ===========================================================================
 # TAB 1 — Info
 # ===========================================================================
-with tab_intro:
+if st.session_state.tab_idx == 0:
     st.success("Streamlit działa poprawnie w ramach DataHub przez iframe!")
 
     st.write(
@@ -50,7 +61,7 @@ with tab_intro:
 # ===========================================================================
 # TAB 2 — Interakcja
 # ===========================================================================
-with tab_interakcja:
+elif st.session_state.tab_idx == 1:
     st.subheader("Formularze i przyciski")
 
     # --- Przycisk z licznikiem ---
@@ -114,7 +125,7 @@ with tab_interakcja:
 # ===========================================================================
 # TAB 3 — Dane (DataFrame, tabela)
 # ===========================================================================
-with tab_dane:
+elif st.session_state.tab_idx == 2:
     st.subheader("Pandas DataFrame")
 
     # --- Generowanie danych ---
@@ -160,7 +171,7 @@ with tab_dane:
 # ===========================================================================
 # TAB 4 — Wykresy
 # ===========================================================================
-with tab_wykresy:
+elif st.session_state.tab_idx == 3:
     st.subheader("Wykresy")
 
     chart_data = pd.DataFrame({
@@ -192,7 +203,7 @@ with tab_wykresy:
 # ===========================================================================
 # TAB 5 — Symulacja wykonania skryptu
 # ===========================================================================
-with tab_symulacja:
+elif st.session_state.tab_idx == 4:
     st.subheader("⏳ Symulacja długiego procesu")
 
     st.warning(
@@ -256,4 +267,4 @@ with tab_symulacja:
 # Footer
 # ===========================================================================
 st.markdown("---")
-st.caption("DataHub — Streamlit test komponentów | v0.4.12")
+st.caption("DataHub — Streamlit test komponentów | v0.5.0")
