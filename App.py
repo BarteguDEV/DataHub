@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.8"
+APP_VERSION = "v0.4.9"
 
 # ===========================================================================
 # JWT Config
@@ -525,69 +525,44 @@ async def streamlit_http_proxy(request: Request, path: str = ""):
 
 
 # ===========================================================================
-# Streamlit — WebSocket proxy (async przez ThreadPoolExecutor)
+# Streamlit — WebSocket proxy (aiohttp — w pełni async)
 # ===========================================================================
-
-import concurrent.futures
-
-_ws_thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=10)
 
 
 @app.websocket("/_stcore/{path:path}")
 @app.websocket("/streamlit/_stcore/{path:path}")
 async def streamlit_ws_proxy(websocket: WebSocket, path: str):
-    """Proxy WebSocket do Streamlit — async, blocking I/O w thread pool."""
+    """Proxy WebSocket do Streamlit przez aiohttp (w pełni async)."""
     await websocket.accept()
-    target_url = f"{STREAMLIT_WS_BASE}/streamlit/_stcore/{path}"
+    target_url = f"http://localhost:{STREAMLIT_PORT}/streamlit/_stcore/{path}"
 
     try:
-        target = ws_client.create_connection(target_url, timeout=5)
+        async with aiohttp.ClientSession() as session:
+            async with session.ws_connect(target_url, timeout=5.0) as ws:
+                async def relay_to_client():
+                    """Streamlit → Client przez aiohttp WebSocket."""
+                    async for msg in ws:
+                        if msg.type == aiohttp.WSMsgType.BINARY:
+                            await websocket.send_bytes(msg.data)
+                        elif msg.type == aiohttp.WSMsgType.TEXT:
+                            await websocket.send_text(msg.data)
+                        elif msg.type == aiohttp.WSMsgType.CLOSED:
+                            break
+
+                async def relay_to_target():
+                    """Client → Streamlit przez aiohttp WebSocket."""
+                    try:
+                        while True:
+                            data = await websocket.receive_bytes()
+                            await ws.send_bytes(data)
+                    except WebSocketDisconnect:
+                        pass
+
+                await asyncio.gather(relay_to_client(), relay_to_target())
     except Exception as exc:
-        print(f"[ws] Connect error to {target_url}: {type(exc).__name__}")
-        await websocket.close(code=1011)
-        return
-
-    stop = asyncio.Event()
-    loop = asyncio.get_event_loop()
-
-    async def relay_to_client():
-        """Streamlit → Client (blocking recv w thread pool)."""
+        print(f"[ws] Proxy error: {type(exc).__name__}: {exc}")
         try:
-            while not stop.is_set():
-                data = await loop.run_in_executor(_ws_thread_pool, target.recv)
-                if data is None:
-                    break
-                if isinstance(data, bytes):
-                    await websocket.send_bytes(data)
-                else:
-                    await websocket.send_text(data)
-        except Exception:
-            pass
-        finally:
-            stop.set()
-
-    async def relay_to_target():
-        """Client → Streamlit (blocking send w thread pool)."""
-        try:
-            while not stop.is_set():
-                data = await websocket.receive_bytes()
-                await loop.run_in_executor(_ws_thread_pool, target.send, data)
-        except WebSocketDisconnect:
-            pass
-        except Exception:
-            pass
-        finally:
-            stop.set()
-
-    tasks = [asyncio.create_task(relay_to_client()), asyncio.create_task(relay_to_target())]
-    try:
-        await asyncio.gather(*tasks)
-    except Exception:
-        pass
-    finally:
-        stop.set()
-        try:
-            target.close()
+            await websocket.close(code=1011)
         except Exception:
             pass
 
