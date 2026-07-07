@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.9"
+APP_VERSION = "v0.4.10"
 
 # ===========================================================================
 # JWT Config
@@ -525,42 +525,72 @@ async def streamlit_http_proxy(request: Request, path: str = ""):
 
 
 # ===========================================================================
-# Streamlit — WebSocket proxy (aiohttp — w pełni async)
+# Streamlit — WebSocket proxy (aiohttp, pełna diagnostyka)
 # ===========================================================================
 
 
 @app.websocket("/_stcore/{path:path}")
 @app.websocket("/streamlit/_stcore/{path:path}")
 async def streamlit_ws_proxy(websocket: WebSocket, path: str):
-    """Proxy WebSocket do Streamlit przez aiohttp (w pełni async)."""
+    """Proxy WebSocket do Streamlit przez aiohttp."""
     await websocket.accept()
-    target_url = f"http://localhost:{STREAMLIT_PORT}/streamlit/_stcore/{path}"
+
+    target_url = f"ws://localhost:{STREAMLIT_PORT}/streamlit/_stcore/{path}"
+    headers = {k: v for k, v in websocket.headers.items()
+               if k.lower() in ("origin", "cookie", "sec-websocket-protocol") and v}
+    print(f"[ws] New connection → {target_url}  headers={headers}")
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.ws_connect(target_url, timeout=5.0) as ws:
+            async with session.ws_connect(target_url, timeout=5.0, headers=headers or None) as ws:
+                print(f"[ws] Connected to Streamlit")
+
                 async def relay_to_client():
-                    """Streamlit → Client przez aiohttp WebSocket."""
-                    async for msg in ws:
-                        if msg.type == aiohttp.WSMsgType.BINARY:
-                            await websocket.send_bytes(msg.data)
-                        elif msg.type == aiohttp.WSMsgType.TEXT:
-                            await websocket.send_text(msg.data)
-                        elif msg.type == aiohttp.WSMsgType.CLOSED:
-                            break
+                    """Streamlit → Client."""
+                    try:
+                        async for msg in ws:
+                            if msg.type == aiohttp.WSMsgType.TEXT:
+                                print(f"[ws] → text ({len(msg.data)} chars)")
+                                await websocket.send_text(msg.data)
+                            elif msg.type == aiohttp.WSMsgType.BINARY:
+                                print(f"[ws] → binary ({len(msg.data)} bytes)")
+                                await websocket.send_bytes(msg.data)
+                            elif msg.type == aiohttp.WSMsgType.CLOSED:
+                                print(f"[ws] ← Streamlit closed")
+                                break
+                            elif msg.type == aiohttp.WSMsgType.ERROR:
+                                print(f"[ws] ← Streamlit error")
+                                break
+                    except Exception as e:
+                        print(f"[ws] relay_to_client EXCEPTION: {type(e).__name__}: {e}")
 
                 async def relay_to_target():
-                    """Client → Streamlit przez aiohttp WebSocket."""
+                    """Client → Streamlit."""
                     try:
                         while True:
-                            data = await websocket.receive_bytes()
-                            await ws.send_bytes(data)
-                    except WebSocketDisconnect:
-                        pass
+                            raw = await websocket.receive()
+                            if raw["type"] == "websocket.disconnect":
+                                print(f"[ws] ← Client disconnected (code={raw.get('code', '?')})")
+                                break
+                            if raw["type"] == "websocket.receive":
+                                if "bytes" in raw:
+                                    print(f"[ws] ← client binary ({len(raw['bytes'])} bytes)")
+                                    await ws.send_bytes(raw["bytes"])
+                                elif "text" in raw:
+                                    print(f"[ws] ← client text ({len(raw['text'])} chars)")
+                                    await ws.send_str(raw["text"])
+                    except Exception as e:
+                        print(f"[ws] relay_to_target EXCEPTION: {type(e).__name__}: {e}")
 
-                await asyncio.gather(relay_to_client(), relay_to_target())
+                tasks = [asyncio.create_task(relay_to_client()), asyncio.create_task(relay_to_target())]
+                done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+                for t in pending:
+                    t.cancel()
+                print(f"[ws] Connection closed (done={len(done)}, cancelled={len(pending)})")
     except Exception as exc:
-        print(f"[ws] Proxy error: {type(exc).__name__}: {exc}")
+        print(f"[ws] Proxy EXCEPTION: {type(exc).__name__}: {exc}")
+        import traceback
+        traceback.print_exc()
         try:
             await websocket.close(code=1011)
         except Exception:
