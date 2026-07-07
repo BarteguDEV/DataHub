@@ -29,7 +29,7 @@ import websocket as ws_client
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import Response, StreamingResponse, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError, jwt
@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.6"
+APP_VERSION = "v0.4.7"
 
 # ===========================================================================
 # JWT Config

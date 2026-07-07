@@ -11,4 +11,4 @@ echo "Python: $(python --version 2>&1)"
 echo "Port: ${PORT:-8000}"
 echo "Streamlit port: ${STREAMLIT_PORT:-8501}"
 
-exec uvicorn App:app --host 0.0.0.0 --port "${PORT:-8000}" --workers 4
+exec uvicorn App:app --host 0.0.0.0 --port "${PORT:-8000}" --workers 1
