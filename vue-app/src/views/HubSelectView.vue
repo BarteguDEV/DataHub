@@ -164,6 +164,7 @@ function navigate(name) {
 
 <style scoped>
 .hub-select {
+  width: 100%;
   max-width: 1100px;
 }
 

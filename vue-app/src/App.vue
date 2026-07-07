@@ -52,6 +52,9 @@ onMounted(async () => {
   flex: 1;
   overflow-y: auto;
   padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* Transition między stronami */
