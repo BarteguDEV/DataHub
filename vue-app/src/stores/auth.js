@@ -1,20 +1,19 @@
 /**
- * Auth store — stan autoryzacji z persystencją w sessionStorage.
- * Zbindowany z API Flask (/api/login, /api/logout, /api/me).
+ * Auth store — JWT + localStorage.
+ * Token: localStorage (datahub_token)
+ * User data: sessionStorage (datahub_user)
  */
 import { reactive } from 'vue'
-import { loginUser, logoutUser, getMe } from '../api.js'
+import { loginUser, logoutUser, getMe, getToken, setToken, clearToken } from '../api.js'
 
-const STORAGE_KEY = 'datahub_auth'
+const USER_KEY = 'datahub_user'
 
-function loadFromStorage() {
+function loadUser() {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
+    const raw = sessionStorage.getItem(USER_KEY)
     if (raw) {
-      const data = JSON.parse(raw)
-      if (data && data.user && data.isAuthenticated) {
-        return data
-      }
+      const user = JSON.parse(raw)
+      if (user && user.username) return user
     }
   } catch {
     // ignore
@@ -22,39 +21,38 @@ function loadFromStorage() {
   return null
 }
 
-function saveToStorage(user) {
+function saveUser(user) {
   try {
-    sessionStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ user, isAuthenticated: true })
-    )
+    sessionStorage.setItem(USER_KEY, JSON.stringify(user))
   } catch {
     // ignore
   }
 }
 
-function clearStorage() {
+function clearUser() {
   try {
-    sessionStorage.removeItem(STORAGE_KEY)
+    sessionStorage.removeItem(USER_KEY)
   } catch {
     // ignore
   }
 }
 
-const saved = loadFromStorage()
+const savedUser = loadUser()
+const hasToken = !!getToken()
 
 const state = reactive({
-  user: saved?.user ?? null,
-  isAuthenticated: saved?.isAuthenticated ?? false,
+  user: savedUser,
+  isAuthenticated: hasToken && !!savedUser,
 })
 
 export function useAuth() {
-  /**
-   * Logowanie przez API.
-   * Zwraca obiekt odpowiedzi API.
-   */
   async function login(username, password) {
     const res = await loginUser(username, password)
+
+    // Zapisz JWT
+    setToken(res.access_token)
+
+    // Zapisz usera
     const user = {
       id: res.user.id,
       username: res.user.username,
@@ -64,46 +62,48 @@ export function useAuth() {
     }
     state.user = user
     state.isAuthenticated = true
-    saveToStorage(user)
+    saveUser(user)
     return res
   }
 
-  /**
-   * Wylogowanie przez API.
-   */
   async function logout() {
     try {
       await logoutUser()
     } catch {
       // ignore — i tak czyścimy stan lokalny
     }
+    clearToken()
+    clearUser()
     state.user = null
     state.isAuthenticated = false
-    clearStorage()
   }
 
-  /**
-   * Inicjalizacja przy starcie aplikacji.
-   * Sprawdza czy sesja serwerowa jest nadal aktywna.
-   * Jeśli nie — czyści stan, ale nie przekierowuje (robi to router guard).
-   */
   async function initialize() {
-    // Jeśli mamy coś w storage, najpierw sprawdź czy sesja Flask żyje
-    if (state.isAuthenticated) {
+    // Jeśli mamy token, sprawdź czy jest nadal ważny przez /api/me
+    if (getToken()) {
       try {
         const me = await getMe()
-        // Uzupełnij dane jeśli API zwróciło więcej
-        if (me.username && state.user) {
-          state.user.username = me.username
-          state.user.id = me.id
+        const user = {
+          id: me.id,
+          username: me.username,
+          role: me.role || 'Developer',
+          initials: me.initials || computeInitials(me.username),
+          loginTime: new Date().toLocaleTimeString('pl-PL'),
         }
+        state.user = user
+        state.isAuthenticated = true
+        saveUser(user)
         return
       } catch {
-        // Sesja Flask nie żyje — czyścimy stan
+        // Token nieważny — czyścimy wszystko
+        clearToken()
+        clearUser()
         state.user = null
         state.isAuthenticated = false
-        clearStorage()
       }
+    } else {
+      state.user = null
+      state.isAuthenticated = false
     }
   }
 

@@ -1,66 +1,41 @@
-# GitHub Actions — deploy na Azure App Service (Python 3.12)
-# Deployuje sam kod źródłowy — Azure Oryx sam buduje i instaluje zależności.
+# ============================================================================
+# DataHub — GitHub Actions Deploy to Azure App Service
 #
-# Wymagany sekret w GitHub:
-#   AZURE_WEBAPP_PUBLISH_PROFILE — profil publikacji z Azure App Service
-#
-# Wymagane ustawienia w Azure App Service → Configuration:
-#   SECRET_KEY               — klucz sesji Flask (wymagany)
-#   SCM_DO_BUILD_DURING_DEPLOYMENT = true
+# Wymagane secrets (GitHub → Settings → Secrets → Actions):
+#   AZURE_WEBAPP_NAME        — nazwa App Service w Azure
+#   AZURE_WEBAPP_PUBLISH_PROFILE — profil publikacji z Azure Portal
+# ============================================================================
 
-name: Deploy do Azure App Service
+name: Deploy to Azure App Service
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
-
-env:
-  AZURE_WEBAPP_NAME: barteguapp
-  PYTHON_VERSION: "3.12"
+    branches: [main, master]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Pobierz kod źródłowy
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Sprawdź konfigurację
-        shell: bash
-        run: |
-          APP_NAME="${{ env.AZURE_WEBAPP_NAME }}"
-          echo "Aplikacja: $APP_NAME"
-          echo "Python:    ${{ env.PYTHON_VERSION }}"
-          if [ "$APP_NAME" = "twoja-nazwa-aplikacji" ]; then
-            echo "::error::Nie zmieniłeś AZURE_WEBAPP_NAME w workflow!"
-            echo "::error::Edytuj plik .github/workflows/deploy.yml linia 20"
-            exit 1
-          fi
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: vue-app/package-lock.json
 
-      - name: Sprawdź sekret AZURE_WEBAPP_PUBLISH_PROFILE
-        env:
-          PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        shell: bash
-        run: |
-          if [ -z "$PUBLISH_PROFILE" ]; then
-            echo "::error::Brak sekretu AZURE_WEBAPP_PUBLISH_PROFILE w GitHubie."
-            echo "::error::Dodaj go w: Settings → Secrets and variables → Actions → New repository secret"
-            exit 1
-          fi
-          echo "Sekret OK ✓"
-
-      - name: Zbuduj Vue.js frontend
-        shell: bash
+      - name: Build Vue frontend
         run: |
           cd vue-app
-          npm install
+          npm ci
           npm run build
-          echo "Vue app zbudowana → static/vue/"
 
-      - name: Deploy na Azure App Service (Oryx zbuduje Python)
+      - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: .

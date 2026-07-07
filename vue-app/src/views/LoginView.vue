@@ -87,7 +87,7 @@
         <!-- Stopka -->
         <div class="login-footer">
           <span class="footer-version">{{ appVersion }}</span>
-          <span class="footer-env">Flask + Vue.js</span>
+          <span class="footer-env">FastAPI + Vue.js</span>
           <span class="footer-dev">developer: Bartegu</span>
         </div>
       </div>

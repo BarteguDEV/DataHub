@@ -1,165 +1,348 @@
-"""Aplikacja Flask z API REST i Vue.js SPA na froncie."""
+"""
+DataHub — FastAPI backend.
+- JWT auth (python-jose + passlib bcrypt)
+- WebSocket proxy do Streamlit
+- HTTP proxy do Streamlit
+- Vue.js SPA frontend (static)
+- REST API dla APEX, AI, DDT
+"""
 
-import os
-import random
-import subprocess
-import signal
-import sys
+# ===========================================================================
+# Imports
+# ===========================================================================
+
+import asyncio
 import atexit
-import time
+import os
 import pathlib
+import random
+import signal
+import subprocess
+import sys
+import time
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from functools import wraps
+from typing import Optional
 
-import threading
-
-import requests
+import httpx
 import websocket as ws_client
 from dotenv import load_dotenv
-from flask import Flask, request, session, jsonify, send_from_directory, Response
-from flask_sqlalchemy import SQLAlchemy
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, status, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from pydantic import BaseModel
+from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.exc import IntegrityError, OperationalError
-from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
 
-APP_VERSION = "v0.3.0"
+# ===========================================================================
+# Version
+# ===========================================================================
 
-# ---------------------------------------------------------------------------
-# App & DB
-# ---------------------------------------------------------------------------
+APP_VERSION = "v0.4.0"
 
-app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", os.urandom(24).hex())
+# ===========================================================================
+# JWT Config
+# ===========================================================================
+
+SECRET_KEY = os.getenv("JWT_SECRET", os.urandom(32).hex())
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8h
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer(auto_error=False)
+
+# ===========================================================================
+# DB
+# ===========================================================================
 
 DB_URL = os.getenv("DATABASE_URL") or "sqlite:///users.db"
-app.config["SQLALCHEMY_DATABASE_URI"] = DB_URL
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-db = SQLAlchemy(app)
-
-# Ścieżka do zbudowanej aplikacji Vue
-VUE_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "vue")
+engine = create_engine(DB_URL, connect_args={"check_same_thread": False} if "sqlite" in DB_URL else {})
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
 
 
-# ---------------------------------------------------------------------------
-# Model
-# ---------------------------------------------------------------------------
-
-class User(db.Model):
+class User(Base):
     __tablename__ = "users"
-
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-
-    def set_password(self, password: str) -> None:
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password: str) -> bool:
-        return check_password_hash(self.password_hash, password)
+    id = Column(Integer, primary_key=True)
+    username = Column(String(80), unique=True, nullable=False)
+    password_hash = Column(String(256), nullable=False)
 
 
-# ---------------------------------------------------------------------------
-# Helper — serwowanie Vue SPA
-# ---------------------------------------------------------------------------
+Base.metadata.create_all(bind=engine)
 
-def serve_vue(path: str = ""):
-    """Serwuje plik zbudowanej aplikacji Vue z SPA fallbackiem."""
-    if path and os.path.exists(os.path.join(VUE_DIST, path)):
-        return send_from_directory(VUE_DIST, path)
-    index = os.path.join(VUE_DIST, "index.html")
-    if os.path.exists(index):
-        return send_from_directory(VUE_DIST, "index.html")
-    return "Vue app not built. Run: cd vue-app && npm run build", 404
+# ===========================================================================
+# Pydantic schemas
+# ===========================================================================
 
 
-# ---------------------------------------------------------------------------
-# API — JSON endpoints
-# ---------------------------------------------------------------------------
-
-@app.route("/api/login", methods=["POST"])
-def api_login():
-    data = request.get_json(silent=True) or {}
-    username = data.get("username", "").strip()
-    password = data.get("password", "")
-
-    user = User.query.filter_by(username=username).first()
-    if not user or not user.check_password(password):
-        return jsonify({"error": "Niepoprawna nazwa użytkownika lub hasło"}), 401
-
-    session["user_id"] = user.id
-    session["username"] = user.username
-    session.permanent = True
-    return jsonify({"ok": True, "user": {
-        "id": user.id,
-        "username": user.username,
-        "role": "Developer",
-        "initials": _compute_initials(user.username),
-    }})
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 
-@app.route("/api/register", methods=["POST"])
-def api_register():
-    data = request.get_json(silent=True) or {}
-    username = data.get("username", "").strip()
-    password = data.get("password", "")
-
-    if not username or not password:
-        return jsonify({"error": "Uzupełnij wszystkie pola"}), 400
-
-    if User.query.filter_by(username=username).first():
-        return jsonify({"error": "Użytkownik już istnieje"}), 409
-
-    user = User(username=username)
-    user.set_password(password)
-    db.session.add(user)
-    db.session.commit()
-    return jsonify({"ok": True}), 201
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
 
 
-@app.route("/api/logout", methods=["POST"])
-def api_logout():
-    session.clear()
-    return jsonify({"ok": True})
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: dict
 
 
-@app.route("/api/me")
-def api_me():
-    if "user_id" not in session:
-        return jsonify({"error": "Nie zalogowany"}), 401
-    user = User.query.get(session["user_id"])
-    if not user:
-        return jsonify({"error": "Użytkownik nie istnieje"}), 401
-    return jsonify({
-        "id": user.id,
-        "username": user.username,
-        "role": "Developer",
-        "initials": _compute_initials(user.username),
-    })
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    role: str = "Developer"
+    initials: str
 
 
-@app.route("/api/health")
-def api_health():
-    return jsonify({
-        "status": "ok",
-        "service": "DataHub API",
-        "version": APP_VERSION,
-    })
+# ===========================================================================
+# Auth helpers
+# ===========================================================================
 
 
-# ---------------------------------------------------------------------------
-# Helper
-# ---------------------------------------------------------------------------
+def _hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def _verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
+
+
+def _create_access_token(data: dict) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def _decode_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
 
 def _compute_initials(username: str) -> str:
     parts = username.replace(".", " ").split()
     return "".join(p[0].upper() for p in parts if p)[:2]
 
 
-# ---------------------------------------------------------------------------
-# APEX — Business Intelligence (mock API)
-# ---------------------------------------------------------------------------
+def _get_user_from_db(username: str) -> Optional[User]:
+    db = SessionLocal()
+    try:
+        return db.query(User).filter_by(username=username).first()
+    finally:
+        db.close()
+
+
+def _create_user(username: str, password: str) -> User:
+    db = SessionLocal()
+    try:
+        user = User(username=username, password_hash=_hash_password(password))
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    finally:
+        db.close()
+
+
+# ===========================================================================
+# Streamlit subprocess management
+# ===========================================================================
+
+STREAMLIT_PORT = int(os.getenv("STREAMLIT_PORT", "8501"))
+STREAMLIT_BASE = f"http://localhost:{STREAMLIT_PORT}"
+STREAMLIT_WS_BASE = f"ws://localhost:{STREAMLIT_PORT}"
+
+_streamlit_process = None
+_STREAMLIT_PIDFILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".streamlit.pid")
+
+
+def _start_streamlit():
+    """Uruchamia Streamlit jako subproces OS."""
+    global _streamlit_process
+    if _is_streamlit_alive():
+        print(f"[streamlit] Already running on port {STREAMLIT_PORT}")
+        return
+
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "streamlit_app.py")
+    cmd = [
+        sys.executable, "-m", "streamlit", "run", script,
+        "--server.port", str(STREAMLIT_PORT),
+        "--server.headless", "true",
+        "--server.enableCORS", "false",
+        "--server.enableXsrfProtection", "false",
+        "--server.enableWebsocketCompression", "false",
+        "--browser.gatherUsageStats", "false",
+    ]
+    try:
+        kwargs = {}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        else:
+            kwargs["start_new_session"] = True
+
+        _streamlit_process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **kwargs)
+        with open(_STREAMLIT_PIDFILE, "w") as f:
+            f.write(str(_streamlit_process.pid))
+        print(f"[streamlit] PID {_streamlit_process.pid} on port {STREAMLIT_PORT}")
+
+        time.sleep(2)
+        if _streamlit_process.poll() is not None:
+            print(f"[streamlit] WARNING — died immediately (code {_streamlit_process.returncode})")
+        else:
+            print("[streamlit] Started successfully")
+    except Exception as e:
+        print(f"[streamlit] ERROR — {e}")
+
+
+def _is_streamlit_alive():
+    if _streamlit_process is not None and _streamlit_process.poll() is None:
+        return True
+    pidfile = pathlib.Path(_STREAMLIT_PIDFILE)
+    if pidfile.exists():
+        try:
+            pid = int(pidfile.read_text().strip())
+            os.kill(pid, 0)
+            return True
+        except (OSError, ValueError):
+            pidfile.unlink(missing_ok=True)
+    return False
+
+
+def _stop_streamlit():
+    global _streamlit_process
+    if _streamlit_process is not None and _streamlit_process.poll() is None:
+        print("[streamlit] Stopping…")
+        try:
+            if sys.platform == "win32":
+                _streamlit_process.send_signal(signal.CTRL_BREAK_EVENT)
+            else:
+                _streamlit_process.terminate()
+            _streamlit_process.wait(timeout=5)
+        except Exception:
+            _streamlit_process.kill()
+            _streamlit_process.wait()
+        print("[streamlit] Stopped")
+    pathlib.Path(_STREAMLIT_PIDFILE).unlink(missing_ok=True)
+
+
+atexit.register(_stop_streamlit)
+
+# ===========================================================================
+# FastAPI app
+# ===========================================================================
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start Streamlit przy starcie, stop przy shutdownie."""
+    _start_streamlit()
+    yield
+    _stop_streamlit()
+
+
+app = FastAPI(title="DataHub API", version=APP_VERSION, lifespan=lifespan)
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ===========================================================================
+# Auth dependency
+# ===========================================================================
+
+
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Zwraca payload JWT lub rzuca 401."""
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return _decode_token(credentials.credentials)
+
+
+# ===========================================================================
+# API routes — Auth
+# ===========================================================================
+
+
+@app.post("/api/login", response_model=TokenResponse)
+def login(body: LoginRequest):
+    username = body.username.strip()
+    user = _get_user_from_db(username)
+    if not user or not _verify_password(body.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Niepoprawna nazwa użytkownika lub hasło")
+
+    token = _create_access_token({"sub": user.username, "id": user.id})
+    return TokenResponse(
+        access_token=token,
+        user={
+            "id": user.id,
+            "username": user.username,
+            "role": "Developer",
+            "initials": _compute_initials(user.username),
+        },
+    )
+
+
+@app.post("/api/register", status_code=201)
+def register(body: RegisterRequest):
+    username = body.username.strip()
+    if not username or not body.password:
+        raise HTTPException(status_code=400, detail="Uzupełnij wszystkie pola")
+
+    existing = _get_user_from_db(username)
+    if existing:
+        raise HTTPException(status_code=409, detail="Użytkownik już istnieje")
+
+    _create_user(username, body.password)
+    return {"ok": True}
+
+
+@app.post("/api/logout")
+def logout():
+    """JWT jest bezstanowy — klient usuwa token po swojej stronie."""
+    return {"ok": True}
+
+
+@app.get("/api/me")
+def me(payload: dict = Depends(get_current_user)):
+    username = payload.get("sub")
+    user_id = payload.get("id")
+    return {
+        "id": user_id,
+        "username": username,
+        "role": "Developer",
+        "initials": _compute_initials(username),
+    }
+
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok", "service": "DataHub API", "version": APP_VERSION}
+
+
+# ===========================================================================
+# API routes — APEX (mock)
+# ===========================================================================
+
 
 def _apex_kpi():
     return {
@@ -181,36 +364,32 @@ def _apex_kpi():
 
 def _apex_trends():
     months = ["Sty", "Lut", "Mar", "Kwi", "Maj", "Cze", "Lip"]
-    return [
-        {"month": m, "transactions": random.randint(800, 3500), "errors": random.randint(5, 50)}
-        for m in months
-    ]
+    return [{"month": m, "transactions": random.randint(800, 3500), "errors": random.randint(5, 50)} for m in months]
 
 
 def _apex_reports():
     statuses = ["ready", "ready", "ready", "generating"]
-    rows = []
     names = [
         "Raport_dzienny_KPI", "SLA_Compliance_Q2", "ETL_Performance_Weekly",
         "Data_Quality_Scorecard", "Capacity_Forecast_Q3", "Error_Analysis",
         "Cost_Tracker_MTD", "User_Activity_Report",
     ]
     authors = ["B. Gawron", "A. Kowalski", "K. Nowak", "System"]
-    for i in range(8):
-        rows.append({
+    return [
+        {
             "id": i + 1,
             "name": random.choice(names) + "_" + datetime.now().strftime("%Y-%m-%d") + random.choice([".pdf", ".xlsx", ".html"]),
             "size": f"{random.randint(200, 5000)} KB",
             "date": (datetime.now() - timedelta(hours=random.randint(1, 72))).strftime("%Y-%m-%d %H:%M"),
             "author": random.choice(authors),
             "status": random.choice(statuses),
-        })
-    return rows
+        }
+        for i in range(8)
+    ]
 
 
 def _apex_etl():
-    workflows = ["LOAD_CUSTOMER", "LOAD_TRANSACTIONS", "SYNC_ACCOUNTS",
-                 "CALC_INTEREST", "GEN_REPORT", "AGG_DAILY_KPI"]
+    workflows = ["LOAD_CUSTOMER", "LOAD_TRANSACTIONS", "SYNC_ACCOUNTS", "CALC_INTEREST", "GEN_REPORT", "AGG_DAILY_KPI"]
     return [
         {
             "workflow": wf,
@@ -257,191 +436,118 @@ def _apex_alerts():
     ]
 
 
-@app.route("/api/apex/kpi")
+@app.get("/api/apex/kpi")
 def apex_kpi():
-    return jsonify({"success": True, "data": _apex_kpi()})
+    return {"success": True, "data": _apex_kpi()}
 
 
-@app.route("/api/apex/trends")
+@app.get("/api/apex/trends")
 def apex_trends():
-    return jsonify({"success": True, "data": _apex_trends()})
+    return {"success": True, "data": _apex_trends()}
 
 
-@app.route("/api/apex/reports")
+@app.get("/api/apex/reports")
 def apex_reports():
-    return jsonify({"success": True, "data": _apex_reports()})
+    return {"success": True, "data": _apex_reports()}
 
 
-@app.route("/api/apex/etl")
+@app.get("/api/apex/etl")
 def apex_etl():
-    return jsonify({"success": True, "data": _apex_etl()})
+    return {"success": True, "data": _apex_etl()}
 
 
-@app.route("/api/apex/sla")
+@app.get("/api/apex/sla")
 def apex_sla():
-    return jsonify({"success": True, "data": _apex_sla()})
+    return {"success": True, "data": _apex_sla()}
 
 
-@app.route("/api/apex/alerts")
+@app.get("/api/apex/alerts")
 def apex_alerts():
-    return jsonify({"success": True, "data": _apex_alerts()})
+    return {"success": True, "data": _apex_alerts()}
 
 
-# ---------------------------------------------------------------------------
-# Statyczne raporty AI
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# Streamlit — HTTP proxy
+# ===========================================================================
 
-AI_REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ai-reports")
-
-
-@app.route("/ai-reports/<path:filename>")
-def serve_ai_report(filename: str):
-    """Serwuje wygenerowane raporty HTML z katalogu ai-reports/."""
-    return send_from_directory(AI_REPORTS_DIR, filename)
+httpx_client = httpx.AsyncClient(timeout=30)
 
 
-# ---------------------------------------------------------------------------
-# Streamlit — proxy HTTP + WebSocket do lokalnego serwera (port 8501)
-# ---------------------------------------------------------------------------
-
-STREAMLIT_PORT = int(os.getenv("STREAMLIT_PORT", "8501"))
-STREAMLIT_BASE = f"http://localhost:{STREAMLIT_PORT}"
-STREAMLIT_WS_BASE = f"ws://localhost:{STREAMLIT_PORT}"
-
-# ---------------------------------------------------------------------------
-# Streamlit — subprocess manager
-# ---------------------------------------------------------------------------
-
-_streamlit_process = None
-_STREAMLIT_PIDFILE = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), ".streamlit.pid"
-)
-
-
-def _start_streamlit():
-    """Uruchamia Streamlit jako subproces OS (jeśli jeszcze nie działa)."""
-    global _streamlit_process
-
-    if _is_streamlit_alive():
-        print(f"[streamlit] Already running on port {STREAMLIT_PORT}")
-        return
-
-    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "streamlit_app.py")
-    cmd = [
-        sys.executable, "-m", "streamlit", "run", script,
-        "--server.port", str(STREAMLIT_PORT),
-        "--server.headless", "true",
-        "--server.enableCORS", "false",
-        "--server.enableXsrfProtection", "false",
-        "--server.enableWebsocketCompression", "false",
-        "--browser.gatherUsageStats", "false",
-    ]
-
+@app.api_route("/streamlit/", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
+@app.api_route("/streamlit/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
+async def streamlit_http_proxy(request: Request, path: str = ""):
+    """Proxy HTTP dla Streamlit poprzez httpx + StreamingResponse."""
+    target_url = f"{STREAMLIT_BASE}/{path}"
     try:
-        kwargs = {}
-        if sys.platform == "win32":
-            kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
-        else:
-            kwargs["start_new_session"] = True
-
-        _streamlit_process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            **kwargs,
+        req = await httpx_client.build_request(
+            method=request.method,
+            url=target_url,
+            headers={k: v for k, v in request.headers.items() if k.lower() not in ("host",)},
+            content=await request.body(),
         )
+        resp = await httpx_client.send(req, stream=True)
 
-        with open(_STREAMLIT_PIDFILE, "w") as f:
-            f.write(str(_streamlit_process.pid))
-        print(f"[streamlit] PID {_streamlit_process.pid} on port {STREAMLIT_PORT}")
+        excluded_headers = {"content-encoding", "transfer-encoding", "connection", "content-length", "server"}
+        headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded_headers]
 
-        # Daj mu chwilę na start i sprawdź czy żyje
-        time.sleep(2)
-        if _streamlit_process.poll() is not None:
-            print(f"[streamlit] WARNING — died immediately (code {_streamlit_process.returncode})")
-        else:
-            print(f"[streamlit] Started successfully")
-    except Exception as e:
-        print(f"[streamlit] ERROR — {e}")
-
-
-def _is_streamlit_alive():
-    """True jeśli Streamlit już działa (subprocess lub PID file)."""
-    if _streamlit_process is not None and _streamlit_process.poll() is None:
-        return True
-    pidfile = pathlib.Path(_STREAMLIT_PIDFILE)
-    if pidfile.exists():
-        try:
-            pid = int(pidfile.read_text().strip())
-            os.kill(pid, 0)          # signal 0 = sprawdź czy proces istnieje
-            return True
-        except (OSError, ValueError):
-            pidfile.unlink(missing_ok=True)
-    return False
+        return StreamingResponse(
+            resp.aiter_bytes(),
+            status_code=resp.status_code,
+            headers=headers,
+        )
+    except httpx.ConnectError:
+        return JSONResponse({"error": "Streamlit nie jest dostępny"}, status_code=502)
 
 
-def _stop_streamlit():
-    """Zatrzymuje subproces Streamlit przy shutdownie."""
-    global _streamlit_process
-    if _streamlit_process is not None and _streamlit_process.poll() is None:
-        print("[streamlit] Stopping…")
-        try:
-            if sys.platform == "win32":
-                _streamlit_process.send_signal(signal.CTRL_BREAK_EVENT)
-            else:
-                _streamlit_process.terminate()
-            _streamlit_process.wait(timeout=5)
-        except Exception:
-            _streamlit_process.kill()
-            _streamlit_process.wait()
-        print("[streamlit] Stopped")
-    pathlib.Path(_STREAMLIT_PIDFILE).unlink(missing_ok=True)
+# ===========================================================================
+# Streamlit — WebSocket proxy
+# ===========================================================================
 
 
-atexit.register(_stop_streamlit)
+@app.websocket("/_stcore/{path:path}")
+@app.websocket("/streamlit/_stcore/{path:path}")
+async def streamlit_ws_proxy(websocket: WebSocket, path: str):
+    """Proxy WebSocket do Streamlit — czysty async, bez gevent."""
+    await websocket.accept()
+    target_url = f"{STREAMLIT_WS_BASE}/_stcore/{path}"
 
-
-@app.route("/_stcore/<path:subpath>")
-@app.route("/streamlit/_stcore/<path:subpath>")
-def streamlit_ws_proxy(subpath: str):
-    """Proxy WebSocket → Streamlit.
-    Gevent-websocket wstrzykuje obiekt WebSocket do request.environ.
-    """
-    client_ws = request.environ.get("wsgi.websocket")
-    if not client_ws:
-        # Zwykłe HTTP — przekaż do HTTP proxy Streamlit
-        return streamlit_http_proxy(f"_stcore/{subpath}")
-
-    target_url = f"{STREAMLIT_WS_BASE}/_stcore/{subpath}"
     try:
         target = ws_client.create_connection(target_url, timeout=5)
     except Exception:
-        return "Streamlit WebSocket unavailable", 502
+        await websocket.close(code=1011)
+        return
 
-    stop = threading.Event()
+    stop = asyncio.Event()
 
-    def relay_to_client():
-        """Streamlit → Client WebSocket."""
+    async def relay_to_client():
+        """Streamlit → Client."""
         try:
             while not stop.is_set():
                 data = target.recv()
                 if data is None:
                     break
-                client_ws.send(data)
+                await websocket.send_bytes(data)
         except Exception:
             pass
         finally:
             stop.set()
 
-    t = threading.Thread(target=relay_to_client, daemon=True)
-    t.start()
+    async def relay_to_target():
+        """Client → Streamlit."""
+        try:
+            while not stop.is_set():
+                data = await websocket.receive_bytes()
+                target.send(data)
+        except WebSocketDisconnect:
+            pass
+        except Exception:
+            pass
+        finally:
+            stop.set()
 
+    tasks = [asyncio.create_task(relay_to_client()), asyncio.create_task(relay_to_target())]
     try:
-        while not stop.is_set():
-            data = client_ws.receive()
-            if data is None:
-                break
-            target.send(data)
+        await asyncio.gather(*tasks)
     except Exception:
         pass
     finally:
@@ -451,97 +557,30 @@ def streamlit_ws_proxy(subpath: str):
         except Exception:
             pass
 
-    return ""
+
+# ===========================================================================
+# Statyczne raporty AI
+# ===========================================================================
+
+AI_REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ai-reports")
+if os.path.isdir(AI_REPORTS_DIR):
+    app.mount("/ai-reports", StaticFiles(directory=AI_REPORTS_DIR), name="ai-reports")
 
 
-# ---------------------------------------------------------------------------
-# Streamlit — proxy HTTP
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# Vue.js SPA — statyczne pliki
+# ===========================================================================
+
+VUE_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "vue")
+if os.path.isdir(VUE_DIST):
+    app.mount("/", StaticFiles(directory=VUE_DIST, html=True), name="vue-spa")
 
 
-@app.route("/streamlit/", defaults={"path": ""})
-@app.route("/streamlit/<path:path>")
-def streamlit_http_proxy(path: str):
-    """Proxy HTTP do serwera Streamlit uruchomionego na porcie 8501."""
-    target = f"{STREAMLIT_BASE}/{path}"
-    try:
-        resp = requests.request(
-            method=request.method,
-            url=target,
-            headers={k: v for k, v in request.headers if k.lower() not in ("host",)},
-            data=request.get_data(),
-            cookies=request.cookies,
-            stream=True,
-            timeout=5,
-        )
-        excluded_headers = {
-            "content-encoding", "transfer-encoding", "connection",
-            "content-length", "server",
-        }
-        headers = [
-            (k, v) for k, v in resp.headers.items()
-            if k.lower() not in excluded_headers
-        ]
-        return Response(
-            resp.iter_content(chunk_size=8192),
-            status=resp.status_code,
-            headers=headers,
-        )
-    except requests.exceptions.ConnectionError:
-        return jsonify({"error": "Streamlit nie jest dostępny"}), 502
-
-
-# ---------------------------------------------------------------------------
-# Frontend — Vue.js SPA (catch-all; API routes above take priority)
-# ---------------------------------------------------------------------------
-
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def vue_frontend(path: str = ""):
-    return serve_vue(path)
-
-
-# ---------------------------------------------------------------------------
-# Error handlers
-# ---------------------------------------------------------------------------
-
-@app.errorhandler(404)
-def not_found(_e):
-    return jsonify({"error": "Not found"}), 404
-
-
-# ---------------------------------------------------------------------------
-# Inicjalizacja bazy
-# ---------------------------------------------------------------------------
-
-with app.app_context():
-    # Race condition między workerami gunicorna — SQLite nie lubi
-    # równoczesnego CREATE TABLE. Wyłapujemy błąd i idziemy dalej.
-    try:
-        db.create_all()
-    except OperationalError:
-        pass
-
-    try:
-        admin = User(username="admin")
-        admin.set_password("admin123")
-        db.session.add(admin)
-        db.session.commit()
-        print("Utworzono domyślnego użytkownika: admin / admin123")
-    except IntegrityError:
-        db.session.rollback()
-
-
-# ---------------------------------------------------------------------------
-# Start Streamlit (subprocess)
-# ---------------------------------------------------------------------------
-
-_start_streamlit()
-
-# ---------------------------------------------------------------------------
-# Start (dev)
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# Dev server
+# ===========================================================================
 
 if __name__ == "__main__":
+    import uvicorn
     port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    uvicorn.run("App:app", host="0.0.0.0", port=port, reload=False)

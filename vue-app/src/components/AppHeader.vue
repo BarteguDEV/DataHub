@@ -90,11 +90,10 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/stores/auth'
 import { useVersion } from '@/stores/version'
-import { logoutUser } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
-const { state } = useAuth()
+const { state, logout } = useAuth()
 const { appVersion, fetchVersion } = useVersion()
 
 const showMenu = ref(false)
@@ -121,12 +120,7 @@ function goBack() {
 
 function handleLogout() {
   showMenu.value = false
-  // Stan czyścimy SYNCHRONICZNIE — niezależne od API
-  state.user = null
-  state.isAuthenticated = false
-  sessionStorage.removeItem('datahub_auth')
-  // API call fire-and-forget — nie czekamy na odpowiedź
-  logoutUser().catch(() => {})
+  logout()
   router.push({ name: 'Login' })
 }
 
