@@ -298,7 +298,7 @@ def serve_ai_report(filename: str):
 # Streamlit — proxy HTTP + WebSocket do lokalnego serwera (port 8501)
 # ---------------------------------------------------------------------------
 
-STREAMLIT_PORT = 8501
+STREAMLIT_PORT = int(os.getenv("STREAMLIT_PORT", "8501"))
 STREAMLIT_BASE = f"http://localhost:{STREAMLIT_PORT}"
 STREAMLIT_WS_BASE = f"ws://localhost:{STREAMLIT_PORT}"
 
