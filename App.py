@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.3"
+APP_VERSION = "v0.4.4"
 
 # ===========================================================================
 # JWT Config
@@ -484,34 +484,35 @@ def apex_alerts():
 
 
 # ===========================================================================
-# Streamlit — HTTP proxy
+# Streamlit — HTTP proxy (współdzielony klient httpx)
 # ===========================================================================
+
+_httpx_client = httpx.AsyncClient(timeout=30)
 
 
 @app.api_route("/streamlit/", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
 @app.api_route("/streamlit/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
 async def streamlit_http_proxy(request: Request, path: str = ""):
-    """Proxy HTTP dla Streamlit — tworzy nowego klienta na każde żądanie."""
+    """Proxy HTTP dla Streamlit — współdzielony klient, streaming bez zamykania."""
     target_url = f"{STREAMLIT_BASE}/{path}"
     try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            body = await request.body()
-            req = client.build_request(
-                method=request.method,
-                url=target_url,
-                headers={k: v for k, v in request.headers.items() if k.lower() not in ("host",)},
-                content=body,
-            )
-            resp = await client.send(req, stream=True)
+        body = await request.body()
+        req = _httpx_client.build_request(
+            method=request.method,
+            url=target_url,
+            headers={k: v for k, v in request.headers.items() if k.lower() not in ("host",)},
+            content=body,
+        )
+        resp = await _httpx_client.send(req, stream=True)
 
-            excluded_headers = {"content-encoding", "transfer-encoding", "connection", "content-length", "server"}
-            headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded_headers}
+        excluded_headers = {"content-encoding", "transfer-encoding", "connection", "content-length", "server"}
+        headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded_headers}
 
-            return StreamingResponse(
-                resp.aiter_bytes(),
-                status_code=resp.status_code,
-                headers=headers,
-            )
+        return StreamingResponse(
+            resp.aiter_bytes(),
+            status_code=resp.status_code,
+            headers=headers,
+        )
     except httpx.ConnectError:
         print(f"[streamlit] Proxy connect error: {target_url}")
         return JSONResponse({"error": "Streamlit nie jest dostępny"}, status_code=502)
