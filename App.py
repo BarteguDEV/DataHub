@@ -24,7 +24,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Optional
 
-import httpx
+import aiohttp
 import websocket as ws_client
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, status, Request
@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.5"
+APP_VERSION = "v0.4.6"
 
 # ===========================================================================
 # JWT Config
@@ -485,37 +485,37 @@ def apex_alerts():
 
 
 # ===========================================================================
-# Streamlit — HTTP proxy (współdzielony klient httpx)
+# Streamlit — HTTP proxy (aiohttp zamiast httpx — stabilniejszy streaming)
 # ===========================================================================
-
-_httpx_client = httpx.AsyncClient(timeout=30)
-
 
 @app.api_route("/streamlit/", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
 @app.api_route("/streamlit/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
 async def streamlit_http_proxy(request: Request, path: str = ""):
-    """Proxy HTTP dla Streamlit — współdzielony klient, streaming bez zamykania."""
+    """Proxy HTTP dla Streamlit przez aiohttp."""
     target_url = f"{STREAMLIT_BASE}/streamlit/{path}"
     try:
         body = await request.body()
-        req = _httpx_client.build_request(
-            method=request.method,
-            url=target_url,
-            headers={k: v for k, v in request.headers.items() if k.lower() not in ("host",)},
-            content=body,
-        )
-        resp = await _httpx_client.send(req, stream=True)
+        async with aiohttp.ClientSession() as session:
+            headers = {k: v for k, v in request.headers.items() if k.lower() not in ("host",)}
+            async with session.request(
+                method=request.method,
+                url=target_url,
+                headers=headers,
+                data=body,
+            ) as resp:
+                excluded = {"content-encoding", "transfer-encoding", "connection", "content-length", "server"}
+                out_headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded}
 
-        excluded_headers = {"content-encoding", "transfer-encoding", "connection", "content-length", "server"}
-        headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded_headers}
+                # Czytamy całe body (pliki JS/CSS są małe, strona Streamlit też)
+                content = await resp.read()
 
-        return StreamingResponse(
-            resp.aiter_bytes(),
-            status_code=resp.status_code,
-            headers=headers,
+        return Response(
+            content=content,
+            status_code=resp.status,
+            headers=out_headers,
         )
-    except httpx.ConnectError:
-        print(f"[streamlit] Proxy connect error: {target_url}")
+    except aiohttp.ClientConnectorError:
+        print(f"[streamlit] Connect error: {target_url}")
         return JSONResponse({"error": "Streamlit nie jest dostępny"}, status_code=502)
     except Exception as e:
         import traceback
