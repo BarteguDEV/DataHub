@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.10"
+APP_VERSION = "v0.4.11"
 
 # ===========================================================================
 # JWT Config
@@ -533,7 +533,11 @@ async def streamlit_http_proxy(request: Request, path: str = ""):
 @app.websocket("/streamlit/_stcore/{path:path}")
 async def streamlit_ws_proxy(websocket: WebSocket, path: str):
     """Proxy WebSocket do Streamlit przez aiohttp."""
-    await websocket.accept()
+    # Wybierz sub-protokół z nagłówka przeglądarki (np. "streamlit")
+    subprotocols = websocket.headers.get("sec-websocket-protocol", "")
+    selected = subprotocols.split(",")[0].strip() if subprotocols else None
+    print(f"[ws] Sub-protocol offered: {subprotocols!r}  selected: {selected!r}")
+    await websocket.accept(subprotocol=selected)
 
     target_url = f"ws://localhost:{STREAMLIT_PORT}/streamlit/_stcore/{path}"
     headers = {k: v for k, v in websocket.headers.items()
