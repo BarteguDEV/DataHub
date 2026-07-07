@@ -13,20 +13,27 @@ max_requests_jitter = 50
 worker_class = "gevent"
 log_file = "-"
 
-# UWAGA — Azure App Service (dla WebSocket Streamlit):
+# Aby module-level code (Streamlit subprocess) odpalił się tylko w masterze,
+# a nie w każdym workerze z osobna.
+preload_app = True
+
+# UWAGA — Streamlit w Azure App Service (Linux):
 #
-# Aby WebSocket Streamlit działał poprawnie, wymagane są:
+# Streamlit jest uruchamiany automatycznie przez App.py jako subprocess OS
+# (subprocess.Popen) przy starcie gunicorna. Żaden dodatkowy skrypt nie jest
+# potrzebny — preload_app=True gwarantuje, że odpali się tylko raz w masterze.
 #
-# 1. **Azure Portal → App Service → Configuration → General Settings**
-#    - "Web sockets" = **ON** (domyślnie wyłączone!)
-#    - "Always On" = **ON** (zapobiega usypianiu procesów)
+# Kluczowe ustawienia Azure:
+#
+# 1. **App Service → Configuration → General Settings**
+#    - "Web sockets" = **ON** (bez tego WebSocket Streamlit nie działa!)
+#    - "Always On" = **ON** (zapobiega garbage collect)
 #
 # 2. **Zmienne środowiskowe (Application Settings)**:
-#    - STREAMLIT_PORT=8501  (można zmienić jeśli 8501 jest zajęty)
+#    - STREAMLIT_PORT=8501  (można zmienić jeśli port zajęty)
 #
-# 3. **startup.sh** uruchamia Streamlit w tle na STREAMLIT_PORT,
-#    a Flask proxy przekierowuje /streamlit/ → localhost:8501
-#
-# Test WebSocket w Azure:
-#   curl -v -H "Connection: Upgrade" -H "Upgrade: websocket" \
-#     https://twoja-aplikacja.azurewebsites.net/_stcore/health
+# Diagnostyka:
+#   - Logi Streamlit: /tmp/streamlit.log (jeśli przekierujesz stdout/stderr)
+#   - Test WebSocket: curl -v -H "Connection: Upgrade" \
+#       -H "Upgrade: websocket" \
+#       https://twoja-app.azurewebsites.net/_stcore/health

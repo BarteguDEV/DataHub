@@ -2,6 +2,12 @@
 
 import os
 import random
+import subprocess
+import signal
+import sys
+import atexit
+import time
+import pathlib
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -302,6 +308,98 @@ STREAMLIT_PORT = int(os.getenv("STREAMLIT_PORT", "8501"))
 STREAMLIT_BASE = f"http://localhost:{STREAMLIT_PORT}"
 STREAMLIT_WS_BASE = f"ws://localhost:{STREAMLIT_PORT}"
 
+# ---------------------------------------------------------------------------
+# Streamlit — subprocess manager
+# ---------------------------------------------------------------------------
+
+_streamlit_process = None
+_STREAMLIT_PIDFILE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), ".streamlit.pid"
+)
+
+
+def _start_streamlit():
+    """Uruchamia Streamlit jako subproces OS (jeśli jeszcze nie działa)."""
+    global _streamlit_process
+
+    if _is_streamlit_alive():
+        print(f"[streamlit] Already running on port {STREAMLIT_PORT}")
+        return
+
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "streamlit_app.py")
+    cmd = [
+        sys.executable, "-m", "streamlit", "run", script,
+        "--server.port", str(STREAMLIT_PORT),
+        "--server.headless", "true",
+        "--server.enableCORS", "false",
+        "--server.enableXsrfProtection", "false",
+        "--server.enableWebsocketCompression", "false",
+        "--browser.gatherUsageStats", "false",
+    ]
+
+    try:
+        kwargs = {}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        else:
+            kwargs["start_new_session"] = True
+
+        _streamlit_process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            **kwargs,
+        )
+
+        with open(_STREAMLIT_PIDFILE, "w") as f:
+            f.write(str(_streamlit_process.pid))
+        print(f"[streamlit] PID {_streamlit_process.pid} on port {STREAMLIT_PORT}")
+
+        # Daj mu chwilę na start i sprawdź czy żyje
+        time.sleep(2)
+        if _streamlit_process.poll() is not None:
+            print(f"[streamlit] WARNING — died immediately (code {_streamlit_process.returncode})")
+        else:
+            print(f"[streamlit] Started successfully")
+    except Exception as e:
+        print(f"[streamlit] ERROR — {e}")
+
+
+def _is_streamlit_alive():
+    """True jeśli Streamlit już działa (subprocess lub PID file)."""
+    if _streamlit_process is not None and _streamlit_process.poll() is None:
+        return True
+    pidfile = pathlib.Path(_STREAMLIT_PIDFILE)
+    if pidfile.exists():
+        try:
+            pid = int(pidfile.read_text().strip())
+            os.kill(pid, 0)          # signal 0 = sprawdź czy proces istnieje
+            return True
+        except (OSError, ValueError):
+            pidfile.unlink(missing_ok=True)
+    return False
+
+
+def _stop_streamlit():
+    """Zatrzymuje subproces Streamlit przy shutdownie."""
+    global _streamlit_process
+    if _streamlit_process is not None and _streamlit_process.poll() is None:
+        print("[streamlit] Stopping…")
+        try:
+            if sys.platform == "win32":
+                _streamlit_process.send_signal(signal.CTRL_BREAK_EVENT)
+            else:
+                _streamlit_process.terminate()
+            _streamlit_process.wait(timeout=5)
+        except Exception:
+            _streamlit_process.kill()
+            _streamlit_process.wait()
+        print("[streamlit] Stopped")
+    pathlib.Path(_STREAMLIT_PIDFILE).unlink(missing_ok=True)
+
+
+atexit.register(_stop_streamlit)
+
 
 @app.route("/_stcore/<path:subpath>")
 @app.route("/streamlit/_stcore/<path:subpath>")
@@ -435,7 +533,13 @@ with app.app_context():
 
 
 # ---------------------------------------------------------------------------
-# Start
+# Start Streamlit (subprocess)
+# ---------------------------------------------------------------------------
+
+_start_streamlit()
+
+# ---------------------------------------------------------------------------
+# Start (dev)
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
