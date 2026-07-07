@@ -114,7 +114,7 @@ const hubs = [
     name: 'DDT',
     cls: 'ddt',
     route: 'DdtHub',
-    title: 'DDT — Developer Dev Tools',
+    title: 'Developers Hub',
     desc: 'Integracje z Jira, Confluence, IAM, TeamCity, Informatica PowerCenter oraz zestaw narzędzi developerskich uruchamianych przez Streamlit.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
     modules: [
@@ -130,7 +130,7 @@ const hubs = [
     name: 'APEX',
     cls: 'apex',
     route: 'ApexHub',
-    title: 'APEX — Business Intelligence',
+    title: 'Business Hub',
     desc: 'Dashboardy KPI, raporty codzienne, statystyki systemowe i helicopter view na całą organizację. Dane z Oracle i Snowflake.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
     modules: [
@@ -144,7 +144,7 @@ const hubs = [
     name: 'AI',
     cls: 'ai',
     route: 'AiHub',
-    title: 'AI Innovation Lab',
+    title: 'AI Hub',
     desc: 'Koncepty AI zgodne z regulacjami bankowymi, raporty HTML, eksperymenty i rozwiązania do użytku wewnętrznego.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>',
     modules: [
@@ -208,9 +208,8 @@ function navigate(name) {
   flex-direction: column;
   gap: 8px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 16px 20px;
 }
@@ -244,19 +243,14 @@ function navigate(name) {
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
   transition: all 0.3s ease;
 }
 
 .hub-tile:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-}
-
-.hub-tile:hover .tile-glow {
-  opacity: 1;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
 .tile-accent {
@@ -267,7 +261,7 @@ function navigate(name) {
   height: 4px;
 }
 
-.hub-tile.ddt .tile-accent { background: linear-gradient(90deg, #ef233c, #ff6b6b); }
+.hub-tile.ddt .tile-accent { background: linear-gradient(90deg, #00c853, #00e5ff); }
 .hub-tile.apex .tile-accent { background: linear-gradient(90deg, #ff9100, #ff3d00); }
 .hub-tile.ai .tile-accent { background: linear-gradient(90deg, #536dfe, #d500f9); }
 
@@ -289,7 +283,7 @@ function navigate(name) {
   background: var(--bg-hover);
 }
 
-.hub-tile.ddt .tile-icon { color: #ef233c; }
+.hub-tile.ddt .tile-icon { color: #00c853; }
 .hub-tile.apex .tile-icon { color: #ff9100; }
 .hub-tile.ai .tile-icon { color: #536dfe; }
 
@@ -391,8 +385,8 @@ function navigate(name) {
 }
 
 .module-status.active {
-  background: rgba(239, 35, 60, 0.12);
-  color: #ef233c;
+  background: rgba(0, 200, 83, 0.12);
+  color: #00c853;
 }
 
 .module-status.beta {
@@ -416,7 +410,7 @@ function navigate(name) {
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #ef233c;
+  color: var(--accent-primary);
   margin-top: 4px;
 }
 
@@ -431,7 +425,11 @@ function navigate(name) {
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s;
-  background: radial-gradient(ellipse at bottom right, rgba(239,35,60,0.08), transparent 60%);
+  background: radial-gradient(ellipse at bottom right, rgba(0,200,83,0.06), transparent 60%);
+}
+
+.hub-tile:hover .tile-glow {
+  opacity: 1;
 }
 
 /* Status bar */
@@ -439,9 +437,8 @@ function navigate(name) {
   display: flex;
   gap: 32px;
   padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(12px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
 }
 

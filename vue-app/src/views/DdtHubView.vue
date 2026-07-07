@@ -2,7 +2,7 @@
   <div class="hub-view">
     <!-- Header -->
     <div class="hub-section-header">
-      <h1 class="section-title">Developer Dev Tools</h1>
+      <h1 class="section-title">Developers Hub</h1>
       <p class="section-desc">
         Aplikacja Streamlit z modułami Jira, Confluence, IAM, TeamCity i Informatica.
         Wybierz tryb podglądu poniżej.
@@ -84,12 +84,12 @@
       <div class="streamlit-launch">
         <div class="launch-card">
           <div class="launch-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef233c" stroke-width="1.5">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00c853" stroke-width="1.5">
               <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
             </svg>
           </div>
-          <h2>DDT — Streamlit</h2>
-          <p>Pełna aplikacja DDT dostępna jako osobna aplikacja Streamlit.<br>
+          <h2>Developers Hub — Streamlit</h2>
+          <p>Pełna aplikacja Developers Hub dostępna jako osobna aplikacja Streamlit.<br>
           Zawiera: Jira, Confluence, IAM, TeamCity, Informatica.<br>
           Dane wyświetlane przez <code>st.write()</code>, <code>st.dataframe()</code>, <code>st.plotly_chart()</code>.</p>
 
@@ -98,7 +98,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
               </svg>
-              Otwórz DDT Streamlit
+              Otwórz Streamlit
             </button>
 
             <button
@@ -228,7 +228,7 @@ onMounted(() => {
 const modules = [
   { name: 'Jira', desc: 'Zadania, sprinty, workflow', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2684ff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>' },
   { name: 'Confluence', desc: 'Dokumentacja i wiki', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00b8d9" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>' },
-  { name: 'IAM', desc: 'Dostęp, role, MFA', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef233c" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
+  { name: 'IAM', desc: 'Dostęp, role, MFA', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c853" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
   { name: 'TeamCity', desc: 'CI/CD, buildy', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' },
   { name: 'Informatica', desc: 'ETL, workflow', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6d00" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' },
 ]

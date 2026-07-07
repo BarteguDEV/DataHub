@@ -1,20 +1,30 @@
 <template>
   <div class="login-page">
-    <!-- Tło — gradient + siatka + glow -->
-    <div class="bg-gradient"></div>
+    <!-- Tło animowane — siatka + cząsteczki -->
     <div class="bg-grid"></div>
-    <div class="bg-glow"></div>
+    <div class="bg-particles">
+      <div
+        v-for="(style, i) in particles"
+        :key="i"
+        class="particle"
+        :class="{ 'is-star': i % 2 === 0 }"
+        :style="style"
+      ></div>
+    </div>
+    <div class="bg-orbs">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
 
     <!-- Panel logowania -->
     <div class="login-container">
       <div class="login-card">
         <!-- Logo -->
         <div class="login-logo">
-          <div class="logo-mark">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
-          </div>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="logo-icon">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
           <div class="logo-text">
             <span class="logo-title">Data<span class="accent">Hub</span></span>
             <span class="logo-sub">Portal integracyjny</span>
@@ -138,13 +148,18 @@ async function handleLogin() {
   }
 }
 
-function particleStyle(i) {
-  const size = 2 + Math.random() * 4
+// Pre-generowane style cząsteczek — stabilne, nie zmieniają się przy re-renderze
+function generateParticleStyle(i) {
+  const isStar = i % 2 === 0
+  const base = isStar ? 4 : 2
+  const extra = Math.random() * (isStar ? 6 : 3)
+  const size = base + extra
   const x = Math.random() * 100
   const y = Math.random() * 100
   const delay = Math.random() * 8
-  const duration = 12 + Math.random() * 18
-  const opacity = 0.15 + Math.random() * 0.35
+  const duration = 5 + Math.random() * 8
+  const opacity = isStar ? 0.3 + Math.random() * 0.5 : 0.2 + Math.random() * 0.3
+  const driftX = -30 + Math.random() * 60
   return {
     width: `${size}px`,
     height: `${size}px`,
@@ -153,8 +168,11 @@ function particleStyle(i) {
     animationDelay: `${delay}s`,
     animationDuration: `${duration}s`,
     opacity,
+    '--drift-x': `${driftX}px`,
   }
 }
+
+const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 </script>
 
 <style scoped>
@@ -164,45 +182,155 @@ function particleStyle(i) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: #07090e;
   overflow: hidden;
 }
 
 /* ====================================
-   TŁO — RED NOIR
+   ANIMOWANE TŁO
    ==================================== */
 
-.bg-gradient {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, #1a0505, #000);
-}
-
+/* Siatka */
 .bg-grid {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(0, 200, 83, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 83, 0.03) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 70%);
   -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 70%);
 }
 
-.bg-glow {
+/* Cząsteczki i gwiazdy */
+.bg-particles {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 600px;
-  height: 600px;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(239, 35, 60, 0.08), transparent 70%);
-  border-radius: 50%;
+  inset: 0;
   pointer-events: none;
 }
 
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: #00c853;
+  box-shadow: 0 0 4px rgba(0, 200, 83, 0.3);
+  animation: float-up linear infinite;
+  will-change: transform, opacity;
+}
+
+.particle.is-star {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  clip-path: polygon(
+    50% 0%, 61% 35%, 98% 35%, 68% 57%,
+    79% 91%, 50% 70%, 21% 91%, 32% 57%,
+    2% 35%, 39% 35%
+  );
+  background: linear-gradient(135deg, #00c853, #69f0ae);
+  filter: drop-shadow(0 0 3px rgba(0, 200, 83, 0.5));
+  animation-name: float-up-star;
+}
+
+.particle.is-star::after {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(circle, rgba(0, 200, 83, 0.15), transparent 70%);
+  pointer-events: none;
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.2;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(40px);
+    opacity: 0;
+  }
+}
+
+@keyframes float-up-star {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg) scale(0.6);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0) translateX(0) rotate(20deg) scale(1);
+  }
+  40% {
+    transform: translateY(-40vh) translateX(var(--drift-x)) rotate(180deg) scale(1.1);
+    opacity: 1;
+  }
+  65% {
+    opacity: 0.2;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(var(--drift-x)) rotate(360deg) scale(0.3);
+    opacity: 0;
+  }
+}
+
+/* Kule świetlne */
+.bg-orbs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: orb-move 20s ease-in-out infinite alternate;
+}
+
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: rgba(0, 200, 83, 0.06);
+  top: -10%;
+  left: -10%;
+}
+
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: rgba(0, 229, 255, 0.05);
+  bottom: -10%;
+  right: -10%;
+  animation-delay: -7s;
+}
+
+.orb-3 {
+  width: 300px;
+  height: 300px;
+  background: rgba(83, 109, 254, 0.04);
+  top: 40%;
+  left: 50%;
+  animation-delay: -14s;
+}
+
+@keyframes orb-move {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(60px, -40px) scale(1.1); }
+  66% { transform: translate(-30px, 50px) scale(0.9); }
+  100% { transform: translate(40px, -20px) scale(1.05); }
+}
+
 /* ====================================
-   KARTA LOGOWANIA — GLASSMORPHISM
+   KARTA LOGOWANIA
    ==================================== */
 
 .login-container {
@@ -215,10 +343,10 @@ function particleStyle(i) {
 
 .login-card {
   width: 400px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(22, 24, 31, 0.8);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 40px;
   display: flex;
@@ -234,15 +362,8 @@ function particleStyle(i) {
   gap: 14px;
 }
 
-.logo-mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: rgba(239, 35, 60, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ef233c;
+.logo-icon {
+  color: #00c853;
 }
 
 .logo-text {
@@ -253,16 +374,16 @@ function particleStyle(i) {
 .logo-title {
   font-size: 22px;
   font-weight: 700;
-  color: #fff;
+  color: #e8eaed;
 }
 
 .logo-title .accent {
-  color: #ef233c;
+  color: #00c853;
 }
 
 .logo-sub {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(232, 234, 237, 0.4);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   font-weight: 500;
@@ -279,13 +400,13 @@ function particleStyle(i) {
 .form-title {
   font-size: 22px;
   font-weight: 600;
-  color: #fff;
+  color: #e8eaed;
   margin: 0;
 }
 
 .form-desc {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(232, 234, 237, 0.5);
   margin: -12px 0 0 0;
 }
 
@@ -298,7 +419,7 @@ function particleStyle(i) {
 .input-group label {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(232, 234, 237, 0.6);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -312,17 +433,17 @@ function particleStyle(i) {
 .input-icon {
   position: absolute;
   left: 14px;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(232, 234, 237, 0.3);
   pointer-events: none;
 }
 
 .input-wrapper input {
   width: 100%;
   padding: 12px 14px 12px 42px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(11, 13, 17, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  color: #fff;
+  color: #e8eaed;
   font-size: 14px;
   font-family: 'Inter', sans-serif;
   outline: none;
@@ -330,12 +451,12 @@ function particleStyle(i) {
 }
 
 .input-wrapper input::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(232, 234, 237, 0.25);
 }
 
 .input-wrapper input:focus {
-  border-color: #ef233c;
-  box-shadow: 0 0 0 3px rgba(239, 35, 60, 0.12);
+  border-color: #00c853;
+  box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.1);
 }
 
 .error-msg {
@@ -349,32 +470,22 @@ function particleStyle(i) {
 
 /* Przycisk */
 .login-btn {
-  position: relative;
   padding: 14px;
-  background: #ef233c;
+  background: linear-gradient(135deg, #00c853, #00e676);
   border: none;
   border-radius: 10px;
-  color: #fff;
+  color: #000;
   font-size: 15px;
   font-weight: 600;
   font-family: 'Inter', sans-serif;
   cursor: pointer;
   transition: all 0.2s;
   margin-top: 4px;
-  overflow: hidden;
-}
-
-.login-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 0, rgba(255,255,255,0.15), transparent 70%);
-  pointer-events: none;
 }
 
 .login-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(239, 35, 60, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 200, 83, 0.3);
 }
 
 .login-btn:disabled {
@@ -392,8 +503,8 @@ function particleStyle(i) {
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #000;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -407,7 +518,7 @@ function particleStyle(i) {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(232, 234, 237, 0.2);
   padding-top: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -421,8 +532,8 @@ function particleStyle(i) {
 
 .stat-item {
   text-align: center;
-  padding: 24px 32px;
-  background: rgba(255, 255, 255, 0.02);
+  padding: 20px 28px;
+  background: rgba(22, 24, 31, 0.4);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
@@ -430,15 +541,15 @@ function particleStyle(i) {
 
 .stat-num {
   display: block;
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 700;
-  color: #ef233c;
+  color: #00c853;
   line-height: 1;
 }
 
 .stat-label {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(232, 234, 237, 0.4);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-top: 6px;

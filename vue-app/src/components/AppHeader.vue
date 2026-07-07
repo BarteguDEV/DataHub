@@ -125,9 +125,9 @@ const showHubMenu = ref(false)
 const backendOnline = ref(false)
 
 const hubs = [
-  { name: 'DdtHub', label: 'DDT — Dev Tools', color: '#ef233c', badge: 'Streamlit' },
-  { name: 'ApexHub', label: 'APEX — BI', color: '#ff9100', badge: 'KPI' },
-  { name: 'AiHub', label: 'AI Innovation Lab', color: '#536dfe', badge: 'New' },
+  { name: 'DdtHub', label: 'Developers Hub', color: '#00c853', badge: 'Streamlit' },
+  { name: 'ApexHub', label: 'Business Hub', color: '#ff9100', badge: 'KPI' },
+  { name: 'AiHub', label: 'AI Hub', color: '#536dfe', badge: 'New' },
 ]
 
 const showBack = computed(() => {
@@ -136,9 +136,9 @@ const showBack = computed(() => {
 
 const hubName = computed(() => {
   const names = {
-    DdtHub: 'DDT — Developer Dev Tools',
-    ApexHub: 'APEX — Business Intelligence',
-    AiHub: 'AI Innovation Lab',
+    DdtHub: 'Developers Hub',
+    ApexHub: 'Business Hub',
+    AiHub: 'AI Hub',
   }
   return names[route.name] || null
 })
@@ -179,10 +179,8 @@ function closeDropdown(e) {
   justify-content: space-between;
   height: 56px;
   padding: 0 24px;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
   z-index: 50;
 }

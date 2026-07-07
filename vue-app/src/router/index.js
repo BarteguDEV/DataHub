@@ -18,19 +18,19 @@ const routes = [
     path: '/ddt',
     name: 'DdtHub',
     component: () => import('@/views/DdtHubView.vue'),
-    meta: { title: 'DDT — Developer Dev Tools', requiresAuth: true, hub: 'ddt' },
+    meta: { title: 'Developers Hub', requiresAuth: true, hub: 'ddt' },
   },
   {
     path: '/apex',
     name: 'ApexHub',
     component: () => import('@/views/ApexHubView.vue'),
-    meta: { title: 'APEX — Business Intelligence', requiresAuth: true, hub: 'apex' },
+    meta: { title: 'Business Hub', requiresAuth: true, hub: 'apex' },
   },
   {
     path: '/ai',
     name: 'AiHub',
     component: () => import('@/views/AiHubView.vue'),
-    meta: { title: 'AI Innovation Lab', requiresAuth: true, hub: 'ai' },
+    meta: { title: 'AI Hub', requiresAuth: true, hub: 'ai' },
   },
   {
     // Wszystko inne → login
