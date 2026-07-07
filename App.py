@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.0"
+APP_VERSION = "v0.4.1"
 
 # ===========================================================================
 # JWT Config
@@ -157,6 +157,23 @@ def _create_user(username: str, password: str) -> User:
     finally:
         db.close()
 
+
+# ===========================================================================
+# Seed domyślnego użytkownika
+# ===========================================================================
+
+db_session = SessionLocal()
+try:
+    existing = db_session.query(User).filter_by(username="admin").first()
+    if not existing:
+        admin = User(username="admin", password_hash=_hash_password("admin123"))
+        db_session.add(admin)
+        db_session.commit()
+        print("Utworzono domyślnego użytkownika: admin / admin123")
+except IntegrityError:
+    db_session.rollback()
+finally:
+    db_session.close()
 
 # ===========================================================================
 # Streamlit subprocess management
