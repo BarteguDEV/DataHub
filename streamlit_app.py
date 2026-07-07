@@ -42,4 +42,4 @@ with col2:
     st.metric("RAM", "2.4 GB", "-12%")
 
 st.markdown("---")
-st.caption("DataHub — POC Streamlit | v0.4.1")
+st.caption("DataHub — POC Streamlit | v0.4.2")

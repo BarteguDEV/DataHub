@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.1"
+APP_VERSION = "v0.4.2"
 
 # ===========================================================================
 # JWT Config
@@ -487,33 +487,39 @@ def apex_alerts():
 # Streamlit — HTTP proxy
 # ===========================================================================
 
-httpx_client = httpx.AsyncClient(timeout=30)
-
 
 @app.api_route("/streamlit/", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
 @app.api_route("/streamlit/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
 async def streamlit_http_proxy(request: Request, path: str = ""):
-    """Proxy HTTP dla Streamlit poprzez httpx + StreamingResponse."""
+    """Proxy HTTP dla Streamlit — tworzy nowego klienta na każde żądanie."""
     target_url = f"{STREAMLIT_BASE}/{path}"
     try:
-        req = await httpx_client.build_request(
-            method=request.method,
-            url=target_url,
-            headers={k: v for k, v in request.headers.items() if k.lower() not in ("host",)},
-            content=await request.body(),
-        )
-        resp = await httpx_client.send(req, stream=True)
+        async with httpx.AsyncClient(timeout=30) as client:
+            body = await request.body()
+            req = client.build_request(
+                method=request.method,
+                url=target_url,
+                headers={k: v for k, v in request.headers.items() if k.lower() not in ("host",)},
+                content=body,
+            )
+            resp = await client.send(req, stream=True)
 
-        excluded_headers = {"content-encoding", "transfer-encoding", "connection", "content-length", "server"}
-        headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded_headers]
+            excluded_headers = {"content-encoding", "transfer-encoding", "connection", "content-length", "server"}
+            headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded_headers]
 
-        return StreamingResponse(
-            resp.aiter_bytes(),
-            status_code=resp.status_code,
-            headers=headers,
-        )
+            return StreamingResponse(
+                resp.aiter_bytes(),
+                status_code=resp.status_code,
+                headers=headers,
+            )
     except httpx.ConnectError:
+        print(f"[streamlit] Proxy connect error: {target_url}")
         return JSONResponse({"error": "Streamlit nie jest dostępny"}, status_code=502)
+    except Exception as e:
+        import traceback
+        print(f"[streamlit] Proxy error: {type(e).__name__}: {e}")
+        traceback.print_exc()
+        return JSONResponse({"error": f"Streamlit proxy error: {type(e).__name__}"}, status_code=502)
 
 
 # ===========================================================================
@@ -590,20 +596,24 @@ if os.path.isdir(AI_REPORTS_DIR):
 
 VUE_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "vue")
 if os.path.isdir(VUE_DIST):
-    # Serwuj pliki statyczne Vue
+    # Serwuj pliki statyczne Vue (assets, favicon itp.)
     app.mount("/assets", StaticFiles(directory=os.path.join(VUE_DIST, "assets")), name="vue-assets")
 
     from fastapi.responses import FileResponse
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def vue_spa(full_path: str):
-        """SPA fallback — wszystko co nie jest API → index.html."""
+        """SPA fallback — tylko ścieżki niezarezerwowane przez API/proxy."""
+        # Nie ruszaj ścieżek Streamlit, API, WebSocket ani raportów AI
+        if full_path.startswith(("streamlit/", "_stcore/", "api/", "ai-reports/")):
+            return JSONResponse({"error": "Not found"}, status_code=404)
+
         file_path = os.path.join(VUE_DIST, full_path)
         if full_path and os.path.isfile(file_path):
             return FileResponse(file_path)
         index = os.path.join(VUE_DIST, "index.html")
         if os.path.isfile(index):
-            return FileResponse(index)
+            return FileResponse(index, media_type="text/html")
         return JSONResponse({"error": "Vue app not built"}, status_code=404)
 else:
     print(f"WARNING: Vue dist not found at {VUE_DIST}")
