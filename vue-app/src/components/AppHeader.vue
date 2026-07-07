@@ -125,7 +125,7 @@ const showHubMenu = ref(false)
 const backendOnline = ref(false)
 
 const hubs = [
-  { name: 'DdtHub', label: 'DDT — Dev Tools', color: '#00c853', badge: 'Streamlit' },
+  { name: 'DdtHub', label: 'DDT — Dev Tools', color: '#ef233c', badge: 'Streamlit' },
   { name: 'ApexHub', label: 'APEX — BI', color: '#ff9100', badge: 'KPI' },
   { name: 'AiHub', label: 'AI Innovation Lab', color: '#536dfe', badge: 'New' },
 ]
@@ -179,8 +179,10 @@ function closeDropdown(e) {
   justify-content: space-between;
   height: 56px;
   padding: 0 24px;
-  background: var(--bg-sidebar);
-  border-bottom: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
   z-index: 50;
 }

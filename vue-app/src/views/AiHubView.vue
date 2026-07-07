@@ -85,7 +85,7 @@ const reports = [
     title: 'SQL Lineage Report',
     desc: 'Analiza zależności między tabelami i widokami w Oracle/Snowflake. Mapowanie przepływu danych od źródła do DWH z wykryciem krytycznych ścieżek.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-    color: 'linear-gradient(135deg, #00c853, #00e5ff)',
+    color: 'linear-gradient(135deg, #ef233c, #ff6b6b)',
     tags: ['SQL', 'Lineage', 'Oracle', 'Snowflake'],
     date: '2026-07-04',
     url: '/ai-reports/sql-lineage-report.html',
@@ -158,7 +158,7 @@ function openReport(id) {
   padding-top: 16px;
 }
 
-.report-card:nth-child(1) .card-icon { color: #00c853; }
+.report-card:nth-child(1) .card-icon { color: #ef233c; }
 .report-card:nth-child(2) .card-icon { color: #536dfe; }
 .report-card:nth-child(3) .card-icon { color: #ff9100; }
 

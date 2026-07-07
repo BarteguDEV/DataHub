@@ -208,8 +208,9 @@ function navigate(name) {
   flex-direction: column;
   gap: 8px;
   flex-shrink: 0;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
   border-radius: 12px;
   padding: 16px 20px;
 }
@@ -243,14 +244,19 @@ function navigate(name) {
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid var(--border-color);
-  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
   transition: all 0.3s ease;
 }
 
 .hub-tile:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.hub-tile:hover .tile-glow {
+  opacity: 1;
 }
 
 .tile-accent {
@@ -261,7 +267,7 @@ function navigate(name) {
   height: 4px;
 }
 
-.hub-tile.ddt .tile-accent { background: linear-gradient(90deg, #00c853, #00e5ff); }
+.hub-tile.ddt .tile-accent { background: linear-gradient(90deg, #ef233c, #ff6b6b); }
 .hub-tile.apex .tile-accent { background: linear-gradient(90deg, #ff9100, #ff3d00); }
 .hub-tile.ai .tile-accent { background: linear-gradient(90deg, #536dfe, #d500f9); }
 
@@ -283,7 +289,7 @@ function navigate(name) {
   background: var(--bg-hover);
 }
 
-.hub-tile.ddt .tile-icon { color: #00c853; }
+.hub-tile.ddt .tile-icon { color: #ef233c; }
 .hub-tile.apex .tile-icon { color: #ff9100; }
 .hub-tile.ai .tile-icon { color: #536dfe; }
 
@@ -385,8 +391,8 @@ function navigate(name) {
 }
 
 .module-status.active {
-  background: rgba(0, 200, 83, 0.12);
-  color: #00c853;
+  background: rgba(239, 35, 60, 0.12);
+  color: #ef233c;
 }
 
 .module-status.beta {
@@ -410,7 +416,7 @@ function navigate(name) {
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent-primary);
+  color: #ef233c;
   margin-top: 4px;
 }
 
@@ -425,11 +431,7 @@ function navigate(name) {
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s;
-  background: radial-gradient(ellipse at bottom right, rgba(0,200,83,0.06), transparent 60%);
-}
-
-.hub-tile:hover .tile-glow {
-  opacity: 1;
+  background: radial-gradient(ellipse at bottom right, rgba(239,35,60,0.08), transparent 60%);
 }
 
 /* Status bar */
@@ -437,8 +439,9 @@ function navigate(name) {
   display: flex;
   gap: 32px;
   padding: 16px 20px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
   border-radius: 10px;
 }
 

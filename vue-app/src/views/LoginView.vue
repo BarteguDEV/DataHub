@@ -1,29 +1,20 @@
 <template>
   <div class="login-page">
-    <!-- Tło animowane — siatka + cząsteczki -->
+    <!-- Tło — gradient + siatka + glow -->
+    <div class="bg-gradient"></div>
     <div class="bg-grid"></div>
-    <div class="bg-particles">
-      <div
-        v-for="i in 30"
-        :key="i"
-        class="particle"
-        :style="particleStyle(i)"
-      ></div>
-    </div>
-    <div class="bg-orbs">
-      <div class="orb orb-1"></div>
-      <div class="orb orb-2"></div>
-      <div class="orb orb-3"></div>
-    </div>
+    <div class="bg-glow"></div>
 
     <!-- Panel logowania -->
     <div class="login-container">
       <div class="login-card">
         <!-- Logo -->
         <div class="login-logo">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="logo-icon">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-          </svg>
+          <div class="logo-mark">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+          </div>
           <div class="logo-text">
             <span class="logo-title">Data<span class="accent">Hub</span></span>
             <span class="logo-sub">Portal integracyjny</span>
@@ -173,105 +164,45 @@ function particleStyle(i) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #07090e;
+  background: #000;
   overflow: hidden;
 }
 
 /* ====================================
-   ANIMOWANE TŁO
+   TŁO — RED NOIR
    ==================================== */
 
-/* Siatka */
+.bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, #1a0505, #000);
+}
+
 .bg-grid {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(0, 200, 83, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 200, 83, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 70%);
   -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 70%);
 }
 
-/* Cząsteczki */
-.bg-particles {
+.bg-glow {
   position: absolute;
-  inset: 0;
-}
-
-.particle {
-  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 600px;
+  height: 600px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(239, 35, 60, 0.08), transparent 70%);
   border-radius: 50%;
-  background: #00c853;
-  animation: float-up linear infinite;
-}
-
-@keyframes float-up {
-  0% {
-    transform: translateY(0) translateX(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-100vh) translateX(40px);
-    opacity: 0;
-  }
-}
-
-/* Kule świetlne */
-.bg-orbs {
-  position: absolute;
-  inset: 0;
   pointer-events: none;
 }
 
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  animation: orb-move 20s ease-in-out infinite alternate;
-}
-
-.orb-1 {
-  width: 500px;
-  height: 500px;
-  background: rgba(0, 200, 83, 0.06);
-  top: -10%;
-  left: -10%;
-}
-
-.orb-2 {
-  width: 400px;
-  height: 400px;
-  background: rgba(0, 229, 255, 0.05);
-  bottom: -10%;
-  right: -10%;
-  animation-delay: -7s;
-}
-
-.orb-3 {
-  width: 300px;
-  height: 300px;
-  background: rgba(83, 109, 254, 0.04);
-  top: 40%;
-  left: 50%;
-  animation-delay: -14s;
-}
-
-@keyframes orb-move {
-  0% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(60px, -40px) scale(1.1); }
-  66% { transform: translate(-30px, 50px) scale(0.9); }
-  100% { transform: translate(40px, -20px) scale(1.05); }
-}
-
 /* ====================================
-   KARTA LOGOWANIA
+   KARTA LOGOWANIA — GLASSMORPHISM
    ==================================== */
 
 .login-container {
@@ -284,10 +215,10 @@ function particleStyle(i) {
 
 .login-card {
   width: 400px;
-  background: rgba(22, 24, 31, 0.8);
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   padding: 40px;
   display: flex;
@@ -303,8 +234,15 @@ function particleStyle(i) {
   gap: 14px;
 }
 
-.logo-icon {
-  color: #00c853;
+.logo-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(239, 35, 60, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef233c;
 }
 
 .logo-text {
@@ -315,16 +253,16 @@ function particleStyle(i) {
 .logo-title {
   font-size: 22px;
   font-weight: 700;
-  color: #e8eaed;
+  color: #fff;
 }
 
 .logo-title .accent {
-  color: #00c853;
+  color: #ef233c;
 }
 
 .logo-sub {
   font-size: 11px;
-  color: rgba(232, 234, 237, 0.4);
+  color: rgba(255, 255, 255, 0.35);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   font-weight: 500;
@@ -341,13 +279,13 @@ function particleStyle(i) {
 .form-title {
   font-size: 22px;
   font-weight: 600;
-  color: #e8eaed;
+  color: #fff;
   margin: 0;
 }
 
 .form-desc {
   font-size: 13px;
-  color: rgba(232, 234, 237, 0.5);
+  color: rgba(255, 255, 255, 0.45);
   margin: -12px 0 0 0;
 }
 
@@ -360,7 +298,7 @@ function particleStyle(i) {
 .input-group label {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(232, 234, 237, 0.6);
+  color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -374,17 +312,17 @@ function particleStyle(i) {
 .input-icon {
   position: absolute;
   left: 14px;
-  color: rgba(232, 234, 237, 0.3);
+  color: rgba(255, 255, 255, 0.25);
   pointer-events: none;
 }
 
 .input-wrapper input {
   width: 100%;
   padding: 12px 14px 12px 42px;
-  background: rgba(11, 13, 17, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  color: #e8eaed;
+  color: #fff;
   font-size: 14px;
   font-family: 'Inter', sans-serif;
   outline: none;
@@ -392,12 +330,12 @@ function particleStyle(i) {
 }
 
 .input-wrapper input::placeholder {
-  color: rgba(232, 234, 237, 0.25);
+  color: rgba(255, 255, 255, 0.2);
 }
 
 .input-wrapper input:focus {
-  border-color: #00c853;
-  box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.1);
+  border-color: #ef233c;
+  box-shadow: 0 0 0 3px rgba(239, 35, 60, 0.12);
 }
 
 .error-msg {
@@ -411,22 +349,32 @@ function particleStyle(i) {
 
 /* Przycisk */
 .login-btn {
+  position: relative;
   padding: 14px;
-  background: linear-gradient(135deg, #00c853, #00e676);
+  background: #ef233c;
   border: none;
   border-radius: 10px;
-  color: #000;
+  color: #fff;
   font-size: 15px;
   font-weight: 600;
   font-family: 'Inter', sans-serif;
   cursor: pointer;
   transition: all 0.2s;
   margin-top: 4px;
+  overflow: hidden;
+}
+
+.login-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0, rgba(255,255,255,0.15), transparent 70%);
+  pointer-events: none;
 }
 
 .login-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(0, 200, 83, 0.3);
+  box-shadow: 0 8px 24px rgba(239, 35, 60, 0.35);
 }
 
 .login-btn:disabled {
@@ -444,8 +392,8 @@ function particleStyle(i) {
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(0, 0, 0, 0.2);
-  border-top-color: #000;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -459,7 +407,7 @@ function particleStyle(i) {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  color: rgba(232, 234, 237, 0.2);
+  color: rgba(255, 255, 255, 0.2);
   padding-top: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -473,8 +421,8 @@ function particleStyle(i) {
 
 .stat-item {
   text-align: center;
-  padding: 20px 28px;
-  background: rgba(22, 24, 31, 0.4);
+  padding: 24px 32px;
+  background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
@@ -482,15 +430,15 @@ function particleStyle(i) {
 
 .stat-num {
   display: block;
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
-  color: #00c853;
+  color: #ef233c;
   line-height: 1;
 }
 
 .stat-label {
   font-size: 12px;
-  color: rgba(232, 234, 237, 0.4);
+  color: rgba(255, 255, 255, 0.35);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-top: 6px;
