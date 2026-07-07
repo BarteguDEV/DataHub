@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.4.2"
+APP_VERSION = "v0.4.3"
 
 # ===========================================================================
 # JWT Config
@@ -505,7 +505,7 @@ async def streamlit_http_proxy(request: Request, path: str = ""):
             resp = await client.send(req, stream=True)
 
             excluded_headers = {"content-encoding", "transfer-encoding", "connection", "content-length", "server"}
-            headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded_headers]
+            headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded_headers}
 
             return StreamingResponse(
                 resp.aiter_bytes(),
