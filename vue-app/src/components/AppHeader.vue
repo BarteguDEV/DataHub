@@ -64,6 +64,24 @@
         <span class="chip-label">{{ appVersion }}</span>
       </div>
 
+      <!-- Slider szerokości -->
+      <div class="width-slider" title="Dopasuj szerokość widoku">
+        <svg class="ws-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+          <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>
+        <input
+          type="range"
+          class="ws-range"
+          min="800"
+          max="1600"
+          step="50"
+          :value="contentWidth"
+          @input="setWidth(Number($event.target.value))"
+        />
+        <span class="ws-label">{{ contentWidth }}</span>
+      </div>
+
       <!-- Użytkownik -->
       <div class="header-user">
         <button class="user-btn" @click.stop="showMenu = !showMenu" title="Menu użytkownika">
@@ -114,11 +132,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/stores/auth'
 import { useVersion } from '@/stores/version'
+import { useContentWidth } from '@/stores/width'
 
 const route = useRoute()
 const router = useRouter()
 const { state, logout } = useAuth()
 const { appVersion, fetchVersion } = useVersion()
+const { contentWidth, setWidth } = useContentWidth()
 
 const showMenu = ref(false)
 const showHubMenu = ref(false)
@@ -519,5 +539,71 @@ function closeDropdown(e) {
   border-radius: 4px;
   background: var(--bg-hover);
   color: var(--text-muted);
+}
+
+/* ────────── Szerokość (slider) ────────── */
+.width-slider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.ws-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.ws-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 72px;
+  height: 4px;
+  border-radius: 100px;
+  background: var(--border-color);
+  outline: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ws-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #536dfe;
+  border: 2px solid var(--bg-card);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.ws-range::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 4px rgba(83, 109, 254, 0.2);
+}
+
+.ws-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #536dfe;
+  border: 2px solid var(--bg-card);
+  cursor: pointer;
+}
+
+.ws-range:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ws-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 </style>

@@ -27,162 +27,108 @@
     <!-- Reports grid -->
     <div class="report-grid">
       <article
-        v-for="r in filteredReports"
+        v-for="(r, index) in sortedReports"
         :key="r.id"
         class="report-card"
-        :class="{
-          active: activeReport === r.id,
-          ['cat-' + r.category]: true
-        }"
+        :class="['report-card', { expanded: activeReport === r.id }]"
         :style="{ '--card-accent': r.accent }"
-        @click="openReport(r.id)"
       >
-        <!-- Accent bar -->
-        <div class="card-accent" :style="{ background: r.gradient }"></div>
+        <!-- Klikalna część karty (zawsze widoczna) -->
+        <div class="card-clickable" @click="openReport(r.id)">
+          <!-- Accent bar -->
+          <div class="card-accent" :style="{ background: r.gradient }"></div>
 
-        <!-- Top row: icon + status badge -->
-        <div class="card-top">
-          <div class="card-icon" v-html="r.icon"></div>
-          <span v-if="r.status" class="card-status" :class="r.status">{{ r.statusLabel || r.status }}</span>
-        </div>
-
-        <!-- Title & description -->
-        <h3 class="card-title">{{ r.title }}</h3>
-        <p class="card-desc">{{ r.desc }}</p>
-
-        <!-- Metric bar (score/progress) -->
-        <div v-if="r.metric" class="card-metric">
-          <div class="metric-bar-bg">
-            <div
-              class="metric-bar-fill"
-              :style="{ width: r.metric.value + '%', background: r.metric.color || r.accent }"
-            ></div>
-          </div>
-          <div class="metric-info">
-            <span class="metric-label">{{ r.metric.label }}</span>
-            <span class="metric-value">
-              {{ r.metric.display ?? r.metric.value }}<small v-if="r.metric.unit">{{ r.metric.unit }}</small>
-            </span>
-          </div>
-        </div>
-
-        <!-- Tags -->
-        <div class="card-tags">
-          <span v-for="t in r.tags" :key="t" class="tag">{{ t }}</span>
-        </div>
-
-        <!-- Footer -->
-        <div class="card-footer">
-          <span class="card-date">{{ r.date }}</span>
-          <span class="card-action">
-            {{ activeReport === r.id ? 'Podgląd ▼' : 'Otwórz →' }}
-          </span>
-        </div>
-      </article>
-    </div>
-
-    <!-- Preview panel -->
-    <transition name="slide">
-      <div v-if="activeReport && currentReport" class="report-preview">
-        <div class="preview-header">
-          <div class="preview-info">
-            <span class="preview-dot" :style="{ background: currentReport.accent }"></span>
-            <span class="preview-name">{{ currentReport.title }}</span>
-            <span v-if="currentReport.status" class="preview-status" :class="currentReport.status">{{ currentReport.statusLabel || currentReport.status }}</span>
-          </div>
-          <div class="preview-actions">
-            <a v-if="currentReport.url"
-              :href="currentReport.url"
-              target="_blank"
-              class="preview-btn"
-              title="Otwórz w nowej karcie"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-              </svg>
-            </a>
-            <button class="preview-btn close" @click="activeReport = null">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Iframe for reports with URL -->
-        <iframe
-          v-if="currentReport.url"
-          :src="currentReport.url"
-          class="preview-frame"
-          frameborder="0"
-        ></iframe>
-
-        <!-- Rich mock preview for new reports -->
-        <div v-else class="mock-preview" :style="{ '--mock-accent': currentReport.accent }">
-          <div class="mock-header">
-            <div class="mock-icon" v-html="currentReport.icon"></div>
-            <div class="mock-header-text">
-              <h2>{{ currentReport.title }}</h2>
-              <p>{{ currentReport.desc }}</p>
+          <!-- Top row: icon + status badge + close btn when expanded -->
+          <div class="card-top">
+            <div class="card-icon" v-html="r.icon"></div>
+            <div class="card-top-right">
+              <span v-if="r.status" class="card-status" :class="r.status">{{ r.statusLabel || r.status }}</span>
+              <button v-if="activeReport === r.id" class="card-close" @click.stop="activeReport = null" title="Zwiń">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div class="mock-body">
-            <!-- Score gauge -->
-            <div v-if="currentReport.metric" class="mock-score-ring">
-              <svg width="120" height="120" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border-color)" stroke-width="6"/>
-                <circle cx="60" cy="60" r="52" fill="none"
-                  :stroke="currentReport.metric.color || currentReport.accent"
-                  stroke-width="6"
-                  stroke-linecap="round"
-                  :stroke-dasharray="`${currentReport.metric.value * 3.267} 326.7`"
-                  transform="rotate(-90 60 60)"
-                />
-              </svg>
-              <div class="mock-score-value">
-                <span class="mock-score-num">{{ currentReport.metric.value }}</span>
-                <span class="mock-score-unit">{{ currentReport.metric.unit }}</span>
-              </div>
-              <div class="mock-score-label">{{ currentReport.metric.label }}</div>
-            </div>
+          <!-- Title & description -->
+          <h3 class="card-title">{{ r.title }}</h3>
+          <p class="card-desc">{{ r.desc }}</p>
 
-            <!-- Key findings -->
-            <div class="mock-findings">
-              <h4 class="mock-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <!-- Metric circular progress -->
+          <div v-if="r.metric" class="card-metric-circle">
+            <svg viewBox="0 0 44 44" width="48" height="48" class="circle-svg">
+              <circle cx="22" cy="22" r="18" fill="none" class="circle-track" stroke-width="3.5"/>
+              <circle cx="22" cy="22" r="18" fill="none" class="circle-fill" stroke-width="3.5"
+                stroke-dasharray="113.1"
+                :stroke-dashoffset="circleOffset(r.metric.value)"
+                stroke-linecap="round"
+                transform="rotate(-90 22 22)"
+                :stroke="r.metric.color || r.accent"/>
+              <text x="22" y="22" text-anchor="middle" dominant-baseline="central"
+                class="circle-text" :fill="r.metric.color || r.accent">
+                {{ typeof r.metric.display === 'number' ? r.metric.display : r.metric.value }}
+              </text>
+            </svg>
+            <div class="circle-meta">
+              <span class="circle-label">{{ r.metric.label }}</span>
+              <span v-if="r.metric.unit" class="circle-unit">{{ r.metric.unit }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- === Rozszerzona zawartość (widoczna po kliknięciu) === -->
+        <div class="card-extra" :class="{ open: activeReport === r.id }">
+          <div class="card-extra-inner">
+            <!-- Findings -->
+            <div class="ex-section">
+              <h4 class="ex-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                 Kluczowe ustalenia
               </h4>
-              <ul class="mock-list">
-                <li v-for="(f, i) in currentReport.findings || defaultFindings" :key="i">
-                  <span class="finding-dot" :style="{ background: currentReport.accent }"></span>
+              <ul class="ex-list">
+                <li v-for="(f, fi) in r.findings" :key="fi">
+                  <span class="ex-dot" :style="{ background: r.accent }"></span>
                   {{ f }}
                 </li>
               </ul>
             </div>
 
             <!-- Recommendations -->
-            <div class="mock-recs">
-              <h4 class="mock-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div class="ex-section">
+              <h4 class="ex-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 Rekomendacje
               </h4>
-              <ul class="mock-list recs">
-                <li v-for="(r, i) in currentReport.recommendations || defaultRecs" :key="i">
-                  <span class="rec-icon">→</span>
-                  {{ r }}
+              <ul class="ex-list recs">
+                <li v-for="(rec, ri) in r.recommendations" :key="ri">
+                  <span class="ex-arrow">→</span>
+                  {{ rec }}
                 </li>
               </ul>
             </div>
           </div>
-
-          <div class="mock-footer">
-            <span class="mock-tag" v-for="t in currentReport.tags" :key="t">{{ t }}</span>
-            <span class="mock-date">{{ currentReport.date }}</span>
-          </div>
         </div>
-      </div>
-    </transition>
+
+        <!-- Tags + Footer (zawsze widoczne) -->
+        <div class="card-tags">
+          <span v-for="t in r.tags" :key="t" class="tag">{{ t }}</span>
+        </div>
+
+        <div class="card-footer">
+          <span class="card-meta"><span class="card-author">{{ r.author }}</span> · v{{ r.version }} · <span class="card-date">{{ r.date }}</span></span>
+          <a v-if="activeReport === r.id && r.url" :href="r.url" target="_blank" class="card-action-link pulse-glow" @click.stop>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Pełny raport
+          </a>
+          <span v-else class="card-action" @click.stop="openReport(r.id)">
+            {{ activeReport === r.id ? 'Zwiń ▲' : 'Otwórz →' }}
+          </span>
+        </div>
+      </article>
+    </div>
   </div>
 </template>
 
@@ -207,6 +153,9 @@ const allReports = [
     status: 'new',
     statusLabel: 'NOWY',
     date: '2026-07-08',
+    author: 'A. Kowalski',
+    version: '2.3.1',
+    url: '/ai-reports/sql-performance-advisor.html',
     metric: { label: 'Performance Score', value: 92, unit: '/100', display: 92, color: '#7c4dff' },
     findings: ['5 zapytań z FULL TABLE SCAN na tabelach >1M rekordów', 'Brak indeksu na JOIN w 3 kluczowych widokach', 'CARTESIAN JOIN wykryty w raportach miesięcznych', 'Niepotrzebny DISTINCT w 2 zapytaniach agregujących'],
     recommendations: ['Dodaj indeksy kompozytowe na kolumnach JOIN', 'Zastosuj PARTITION BY dla tabel faktów', 'Zamień DISTINCT na EXISTS w podzapytaniach', 'Przepisz CARTESIAN JOIN na INNER JOIN z kluczami'],
@@ -223,6 +172,9 @@ const allReports = [
     status: 'beta',
     statusLabel: 'BETA',
     date: '2026-07-07',
+    author: 'M. Nowak',
+    version: '1.0.5',
+    url: '/ai-reports/sql-code-review.html',
     metric: { label: 'Code Quality', value: 74, unit: '/100', display: 74, color: '#651fff' },
     findings: ['Niespójne nazewnictwo (CamelCase vs SNAKE_CASE) w 12 miejscach', 'Brak komentarzy w złożonych CTE', 'Użycie SELECT * w 8 widokach produkcyjnych', 'Brak obsługi NULL w kolumnach numerycznych'],
     recommendations: ['Ustandaryzuj nazewnictwo na SNAKE_CASE', 'Dodaj komentarze do każdego CTE >10 linii', 'Zamień SELECT * na jawne kolumny', 'Dodaj COALESCE/NVL dla kolumn numerycznych'],
@@ -239,7 +191,9 @@ const allReports = [
     status: 'stable',
     statusLabel: 'STABILNY',
     date: '2026-07-04',
-    url: '/ai-reports/sql-lineage-report.html',
+    author: 'K. Wiśniewska',
+    version: '3.1.0',
+    url: '/ai-reports/sql-lineage.html',
     metric: { label: 'Pokrycie', value: 95, unit: '%', display: 95, color: '#536dfe' },
     findings: ['12 łańcuchów zależności wykrytych', '3 krytyczne ścieżki bez backupu', '2 widoki z cyklicznymi referencjami'],
     recommendations: ['Dodaj materializację dla krytycznych widoków', 'Przerwij cykle w zależnościach'],
@@ -258,6 +212,9 @@ const allReports = [
     status: 'new',
     statusLabel: 'NOWY',
     date: '2026-07-08',
+    author: 'J. Kamiński',
+    version: '2.0.2',
+    url: '/ai-reports/etl-dependency.html',
     metric: { label: 'Pokrycie analizy', value: 88, unit: '%', display: 88, color: '#00c853' },
     findings: ['Nieużywane: 3 mappingi, 2 sesje, 1 workflow', '5 mappingów o zbyt wysokiej złożoności (>50 transformacji)', '7 duplikujących się transformacji Expression', '2 osierocone workflow bez sesji'],
     recommendations: ['Usuń nieużywane obiekty (redukcja kosztów utrzymania)', 'Podziel złożone mappingi na warstwy', 'Wydziel powielone Expression do osobnych obiektów'],
@@ -274,6 +231,9 @@ const allReports = [
     status: 'new',
     statusLabel: 'NOWY',
     date: '2026-07-08',
+    author: 'P. Lewandowski',
+    version: '1.0.3',
+    url: '/ai-reports/etl-complexity.html',
     metric: { label: 'Complexity Score', value: 72, unit: '/100', display: 72, color: '#ffab00' },
     findings: ['Średnia liczba transformacji na mapping: 34', '8 mappingów z kategorii "krytyczny"', 'Najwyższy wynik: 94/100 (mapping FCT_SALES_LOAD)', 'Wąskie gardła w warstwie BUFF'],
     recommendations: ['Refaktoryzuj mappingi z score >80', 'Wprowadź standardowe szablony ETL', 'Dodaj warstwę stagingową dla lookupów'],
@@ -290,6 +250,9 @@ const allReports = [
     status: 'beta',
     statusLabel: 'BETA',
     date: '2026-07-07',
+    author: 'T. Zieliński',
+    version: '3.2.0',
+    url: '/ai-reports/data-flow.html',
     metric: { label: 'Węzłów w grafie', value: 47, unit: '', display: 47, color: '#00bcd4' },
     findings: ['3 źródła → 5 landingi → 8 BUFF → 12 DM → 24 raporty', 'Największy przepływ: Core Banking (12M rekordów/dzień)', '2 węzły z opóźnieniem >4h'],
     recommendations: ['Zoptymalizuj węzły z opóźnieniem', 'Dodaj monitoring przepływów krytycznych'],
@@ -306,6 +269,9 @@ const allReports = [
     status: 'new',
     statusLabel: 'NOWY',
     date: '2026-07-08',
+    author: 'E. Mazur',
+    version: '1.1.0',
+    url: '/ai-reports/duplicate-logic.html',
     metric: { label: 'Duplikacje wykryte', value: 23, unit: '', display: 23, color: '#ff5252' },
     findings: ['8 identycznych CASE WHEN w różnych mappingach', '5 powielonych JOIN między widokami', '7 duplikatów Expression w sesjach', '3 identyczne funkcje PL/SQL w pakietach'],
     recommendations: ['Wydziel CASE do osobnego widoku', 'Stwórz funkcję dla powielonych JOIN', 'Zrefaktoryzuj Expression do shared objects'],
@@ -322,7 +288,9 @@ const allReports = [
     status: 'stable',
     statusLabel: 'STABILNY',
     date: '2026-07-04',
-    url: '/ai-reports/data-mapping-report.html',
+    author: 'R. Krawczyk',
+    version: '2.1.4',
+    url: '/ai-reports/data-mapping.html',
     metric: { label: 'Pokrycie mapowania', value: 84, unit: '%', display: 84, color: '#ff9100' },
     findings: ['15 pól źródłowych bez mapowania', '3 transformacje o niepotwierdzonej logice', 'Luki w mapowaniu wymiarów'],
     recommendations: ['Uzupełnij brakujące mapowania', 'Zweryfikuj logikę transformacji'],
@@ -341,6 +309,9 @@ const allReports = [
     status: 'new',
     statusLabel: 'NOWY',
     date: '2026-07-08',
+    author: 'A. Wójcik',
+    version: '1.2.0',
+    url: '/ai-reports/deployment-risk.html',
     metric: { label: 'Risk Score', value: 68, unit: '/100', display: 68, color: '#ff5252' },
     findings: ['Wpływ na 12 procesów downstream', 'Zmiana dotyczy 8 krytycznych tabel', 'Wymagany restart schedulerów', 'Brak testów regresyjnych dla 3 mappingów'],
     recommendations: ['Wykonaj pełny regression test', 'Zaplanuj okno wdrożeniowe poza godzinami batch', 'Przygotuj rollback script'],
@@ -357,6 +328,9 @@ const allReports = [
     status: 'beta',
     statusLabel: 'BETA',
     date: '2026-07-07',
+    author: 'B. Szymański',
+    version: '3.0.1',
+    url: '/ai-reports/oracle-impact.html',
     metric: { label: 'Impact Score', value: 81, unit: '/100', display: 81, color: '#ff1744' },
     findings: ['34 zależne widoki od tabeli FCT_SALES', '12 procedur wymagających rekompilacji', '7 mappingów ETL korzystających z obiektu', '4 raporty BI oparte na zmienianym widoku'],
     recommendations: ['Przeanalizuj każdą ścieżkę zależności', 'Zaplanuj zmianę poza godzinami szczytu', 'Powiadom właścicieli raportów BI'],
@@ -373,6 +347,9 @@ const allReports = [
     status: 'new',
     statusLabel: 'NOWY',
     date: '2026-07-08',
+    author: 'Ł. Dąbrowski',
+    version: '2.0.0',
+    url: '/ai-reports/data-quality.html',
     metric: { label: 'Quality Score', value: 76, unit: '/100', display: 76, color: '#ffab00' },
     findings: ['12.4% NULL w kluczowych kolumnach', '2 345 duplikatów PK w tabeli CUSTOMER_DIM', 'Niespójność dat między warstwą DM a Raportami', '8 wartości odstających w kolumnach finansowych'],
     recommendations: ['Uruchom proces czyszczenia duplikatów', 'Dodaj constrainty NOT NULL', 'Zweryfikuj zakresy dat w procesach ETL'],
@@ -389,7 +366,9 @@ const allReports = [
     status: 'stable',
     statusLabel: 'STABILNY',
     date: '2026-07-04',
-    url: '/ai-reports/test-generator-report.html',
+    author: 'D. Woźniak',
+    version: '1.3.2',
+    url: '/ai-reports/test-generator.html',
     metric: { label: 'Pokrycie testami', value: 67, unit: '%', display: 67, color: '#d500f9' },
     findings: ['45 testów wygenerowanych', '12 brakujących referencji wykrytych', '8 duplikacji w logice ETL'],
     recommendations: ['Rozszerz testy o przypadki brzegowe', 'Automatyzuj walidację po deploymentach'],
@@ -408,6 +387,9 @@ const allReports = [
     status: 'new',
     statusLabel: 'NOWY',
     date: '2026-07-08',
+    author: 'K. Kozłowski',
+    version: '2.1.0',
+    url: '/ai-reports/doc-generator.html',
     metric: { label: 'Dokumentacja', value: 100, unit: '%', display: '✓ Gotowe', color: '#448aff' },
     findings: ['5 procesów udokumentowanych', '3 diagramy przepływu wygenerowane', 'Dokumentacja w 3 formatach: MD, HTML, PDF'],
     recommendations: ['Dodaj sekcję SLA dla każdego procesu', 'Zintegruj z Confluence API'],
@@ -424,6 +406,9 @@ const allReports = [
     status: 'beta',
     statusLabel: 'BETA',
     date: '2026-07-07',
+    author: 'M. Jankowski',
+    version: '3.0.0',
+    url: '/ai-reports/release-summary.html',
     metric: { label: 'Przygotowanie', value: 85, unit: '%', display: 85, color: '#2979ff' },
     findings: ['Release R-2026.07: 12 zmian, 8 Jira ticketów', '3 nowe tabele, 2 usunięte obiekty', '4 workflow zmodyfikowane', 'Wymagany restart schedulerów'],
     recommendations: ['Wykonaj such-run przed deploymentem', 'Przygotuj raport po-wdrożeniowy', 'Zaktualizuj runbook'],
@@ -440,6 +425,9 @@ const allReports = [
     status: 'new',
     statusLabel: 'NOWY',
     date: '2026-07-08',
+    author: 'A. Kwiatkowska',
+    version: '1.0.4',
+    url: '/ai-reports/scheduler-optimization.html',
     metric: { label: 'Optymalizacja', value: 40, unit: '% oszczędności', display: 40, color: '#00e5ff' },
     findings: ['5 kolizji okien batchowych', '3 joby z czasem wykonania >6h', 'Niewykorzystana równoległość w oknie nocnym', 'Wąskie gardło: proces ładowania DM'],
     recommendations: ['Przesuń joby poza kolizje', 'Zwiększ równoległość w oknie 00-04', 'Podziel najdłuższe joby na mniejsze partie'],
@@ -468,32 +456,40 @@ const filteredReports = computed(() => {
   return allReports.filter(r => r.category === activeCategory.value)
 })
 
-const currentReport = computed(() =>
-  allReports.find(r => r.id === activeReport.value)
-)
+/** Filtruje + przestawia rozszerzony kafelek na początek jego rzędu,
+ *  aby mógł zająć grid-column: 1 / -1 bez zjeżdżania do niższego rzędu */
+const sortedReports = computed(() => {
+  const list = filteredReports.value
+  if (!activeReport.value) return list
 
-/* ──────────── DEFAULT MOCK DATA ──────────── */
-const defaultFindings = [
-  'Analiza zakończona — 15 potencjalnych problemów wykrytych',
-  '3 krytyczne fragmenty wymagające natychmiastowej optymalizacji',
-  '12 rekomendacji poprawiających wydajność i jakość',
-]
-const defaultRecs = [
-  'Wykonaj przegląd wszystkich znalezionych problemów',
-  'Wdróż rekomendacje w najbliższym oknie batchowym',
-  'Monitoruj wyniki po wdrożeniu przez 7 dni',
+  const activeIdx = list.findIndex(r => r.id === activeReport.value)
+  if (activeIdx < 0 || activeIdx === 0) return list
 
-]
+  const rowStart = Math.floor(activeIdx / 3) * 3
+  if (activeIdx === rowStart) return list
+
+  const result = [...list]
+  const [card] = result.splice(activeIdx, 1)
+  result.splice(rowStart, 0, card)
+  return result
+})
 
 /* ──────────── ACTIONS ──────────── */
 function openReport(id) {
   activeReport.value = activeReport.value === id ? null : id
 }
+
+/** Wylicza stroke-dashoffset dla kołowego wskaźnika postępu */
+function circleOffset(value) {
+  const r = 18
+  const circ = 2 * Math.PI * r
+  return circ * (1 - Math.min(100, Math.max(0, value)) / 100)
+}
 </script>
 
 <style scoped>
 /* ───────── LAYOUT ───────── */
-.hub-view { width: 100%; max-width: 1200px; }
+.hub-view { width: 100%; max-width: var(--content-width, 1200px); }
 
 .hub-section-header { margin-bottom: 12px; }
 .section-title { font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0; letter-spacing: -0.3px; }
@@ -554,11 +550,12 @@ function openReport(id) {
   color: #536dfe;
 }
 
-/* ───────── REPORT GRID ───────── */
+/* ───────── REPORT GRID (CSS Grid) ───────── */
 .report-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  grid-auto-flow: row dense;
   margin-bottom: 24px;
 }
 
@@ -568,27 +565,41 @@ function openReport(id) {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 14px;
-  overflow: hidden;
-  cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 0;
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: border-color 0.35s ease,
+              box-shadow 0.35s ease;
+  align-self: start;
+  z-index: 1;
 }
 
 .report-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
-.report-card.active {
+/* ── Rozszerzenie: kafelek rozciąga się na wszystkie kolumny ── */
+/* row dense automatycznie wypełnia puste komórki po lewej */
+.report-card.expanded {
+  grid-column: 1 / -1;
   border-color: var(--card-accent, #536dfe);
-  box-shadow: 0 0 0 1px var(--card-accent, #536dfe), 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 1px var(--card-accent, #536dfe), 0 16px 48px rgba(0, 0, 0, 0.5);
+  z-index: 10;
 }
 
-.card-accent { height: 4px; flex-shrink: 0; }
+.card-clickable {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-clickable:hover .card-icon {
+  transform: scale(1.1);
+}
+
+.card-accent { height: 4px; flex-shrink: 0; border-radius: 14px 14px 0 0; overflow: hidden; }
 
 /* ───────── CARD TOP ───────── */
 .card-top {
@@ -599,6 +610,12 @@ function openReport(id) {
   padding-top: 14px;
 }
 
+.card-top-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .card-icon {
   color: var(--card-accent, #536dfe);
   display: flex;
@@ -606,8 +623,26 @@ function openReport(id) {
   transition: transform 0.3s ease;
 }
 
-.report-card:hover .card-icon {
-  transform: scale(1.1);
+/* Close button */
+.card-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.card-close:hover {
+  border-color: #ff5252;
+  color: #ff5252;
+  background: rgba(255, 82, 82, 0.1);
 }
 
 /* Status badges */
@@ -661,48 +696,148 @@ function openReport(id) {
   overflow: hidden;
 }
 
-/* ───────── METRIC BAR ───────── */
-.card-metric {
-  padding: 0 20px;
+.report-card.expanded .card-desc {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+/* ───────── METRIC CIRCLE ───────── */
+.card-metric-circle {
+  padding: 4px 20px 0 20px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 14px;
 }
 
-.metric-bar-bg {
-  height: 3px;
-  background: var(--bg-tag);
-  border-radius: 100px;
-  overflow: hidden;
+.circle-svg {
+  flex-shrink: 0;
 }
 
-.metric-bar-fill {
-  height: 100%;
-  border-radius: 100px;
-  transition: width 0.6s ease;
+.circle-track {
+  stroke: var(--bg-tag);
 }
 
-.metric-info {
-  display: flex;
-  justify-content: space-between;
+.circle-fill {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.circle-text {
   font-size: 11px;
-}
-
-.metric-label {
-  color: var(--text-muted);
-}
-
-.metric-value {
-  color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-.metric-value small {
-  font-weight: 400;
+.circle-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.circle-label {
+  font-size: 11px;
   color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.circle-unit {
   font-size: 10px;
-  margin-left: 1px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* ──────── ROZSZERZONA ZAWARTOŚĆ (wewnątrz kafelka) ──────── */
+.card-extra {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.35s ease,
+              margin 0.35s ease;
+  margin: 0 20px;
+}
+
+.card-extra.open {
+  max-height: 600px;
+  opacity: 1;
+}
+
+/* Gdy kafelek rozszerzony: findings + recs w dwóch kolumnach obok siebie */
+.report-card.expanded .card-extra-inner {
+  flex-direction: row;
+  gap: 24px;
+}
+
+.report-card.expanded .ex-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-card.expanded .ex-section:first-child {
+  border-right: 1px solid var(--border-color);
+  padding-right: 24px;
+}
+
+/* ── EX-(Sekcje) ── */
+.ex-section {}
+
+.ex-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ex-title svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.card-extra-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ex-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ex-list li {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  padding-left: 14px;
+  position: relative;
+}
+
+.ex-dot {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ex-list.recs li { padding-left: 16px; }
+.ex-arrow {
+  position: absolute;
+  left: 0;
+  color: var(--card-accent, #536dfe);
+  font-weight: 700;
+  font-size: 12px;
 }
 
 /* ───────── TAGS ───────── */
@@ -711,6 +846,7 @@ function openReport(id) {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
+  margin-top: auto;
 }
 
 .tag {
@@ -736,288 +872,99 @@ function openReport(id) {
   align-items: center;
   padding: 12px 20px;
   border-top: 1px solid var(--border-color);
-  margin-top: auto;
+  gap: 8px;
 }
 
-.card-date { font-size: 11px; color: var(--text-muted); }
+.card-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.card-author {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.card-date { color: var(--text-muted); }
 
 .card-action {
   font-size: 12px;
   font-weight: 600;
   color: var(--card-accent, #536dfe);
+  cursor: pointer;
   transition: transform 0.2s;
+  user-select: none;
+  white-space: nowrap;
 }
 
-.report-card:hover .card-action {
+.report-card:not(.expanded) .card-action:hover {
   transform: translateX(3px);
 }
 
-/* ───────── PREVIEW PANEL ───────── */
-.report-preview {
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--bg-card);
-  margin-bottom: 24px;
-}
-
-.preview-header {
-  display: flex;
+.card-action-link {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--bg-sidebar);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.preview-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.preview-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.preview-status {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  padding: 2px 8px;
-  border-radius: 100px;
-  text-transform: uppercase;
-}
-
-.preview-status.new { background: rgba(0, 200, 83, 0.12); color: #00c853; border: 1px solid rgba(0, 200, 83, 0.2); }
-.preview-status.beta { background: rgba(83, 109, 254, 0.12); color: #536dfe; border: 1px solid rgba(83, 109, 254, 0.2); }
-.preview-status.stable { background: rgba(255, 255, 255, 0.04); color: var(--text-muted); border: 1px solid var(--border-color); }
-
-.preview-actions { display: flex; gap: 6px; }
-
-.preview-btn {
-  display: flex;
-  align-items: center;
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-card);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s;
-  text-decoration: none;
-}
-
-.preview-btn:hover { border-color: #536dfe; color: #536dfe; }
-.preview-btn.close:hover { border-color: #ff5252; color: #ff5252; }
-
-.preview-frame {
-  width: 100%;
-  height: 600px;
-  background: #0b0d11;
-}
-
-/* ───────── MOCK PREVIEW ───────── */
-.mock-preview {
-  padding: 32px;
-  --mock-accent: #536dfe;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-.mock-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-}
-
-.mock-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--mock-accent) 12%, transparent);
-  color: var(--mock-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.mock-icon svg { width: 28px; height: 28px; }
-
-.mock-header-text { flex: 1; }
-.mock-header-text h2 {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 6px 0;
-}
-.mock-header-text p {
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-/* Score ring */
-.mock-body {
-  display: grid;
-  grid-template-columns: auto 1fr 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-.mock-score-ring {
-  position: relative;
-  width: 120px;
-  height: 140px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.mock-score-ring svg {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.mock-score-value {
-  position: absolute;
-  top: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-}
-
-.mock-score-num {
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.mock-score-unit {
-  display: block;
+  gap: 5px;
   font-size: 12px;
-  font-weight: 500;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-.mock-score-label {
-  position: absolute;
-  bottom: 4px;
-  font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted);
-  text-align: center;
-  letter-spacing: 0.3px;
+  color: var(--card-accent, #536dfe);
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--card-accent, #536dfe);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.card-action-link:hover {
+  background: color-mix(in srgb, var(--card-accent, #536dfe) 10%, transparent);
 }
 
-/* Findings & Recommendations */
-.mock-findings,
-.mock-recs {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 16px 18px;
+/* ── Pulsujący glow dla przycisku "Pełny raport" ── */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px color-mix(in srgb, var(--card-accent, #536dfe) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--card-accent, #536dfe) 50%, transparent),
+                0 0 24px color-mix(in srgb, var(--card-accent, #536dfe) 20%, transparent);
+  }
 }
 
-.mock-section-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 12px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.mock-section-title svg { flex-shrink: 0; }
-
-.mock-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mock-list li {
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--text-secondary);
-  padding-left: 16px;
-  position: relative;
-}
-
-.finding-dot {
-  position: absolute;
-  left: 0;
-  top: 7px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.mock-list.recs li { padding-left: 18px; }
-.rec-icon {
-  position: absolute;
-  left: 0;
-  color: var(--mock-accent);
-  font-weight: 700;
-}
-
-.mock-footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color);
-}
-
-.mock-tag {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 4px 12px;
-  border-radius: 100px;
-  background: var(--bg-tag);
-  color: var(--text-muted);
-  border: 1px solid var(--border-color);
-}
-
-.mock-date {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-/* ───────── TRANSITIONS ───────── */
-.slide-enter-active, .slide-leave-active {
-  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.slide-enter-from, .slide-leave-to {
-  opacity: 0;
-  transform: translateY(-12px);
+.card-action-link.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 /* ───────── RESPONSIVE ───────── */
-@media (max-width: 900px) {
-  .report-grid { grid-template-columns: repeat(2, 1fr); }
-  .mock-body { grid-template-columns: 1fr; }
+@media (max-width: 960px) {
+  .report-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* Na wąskim ekranie findings i recs jeden pod drugim */
+  .report-card.expanded .card-extra-inner {
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+  .report-card.expanded .ex-section:first-child {
+    border-right: none !important;
+    padding-right: 0 !important;
+  }
 }
 
 @media (max-width: 560px) {
-  .report-grid { grid-template-columns: 1fr; }
+  .report-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .report-card.expanded .card-extra-inner {
+    flex-direction: column !important;
+  }
+  .report-card.expanded .ex-section:first-child {
+    border-right: none !important;
+    padding-right: 0 !important;
+  }
 }
 </style>

@@ -237,7 +237,7 @@ const modules = [
 <style scoped>
 .hub-view {
   width: 100%;
-  max-width: 1200px;
+  max-width: var(--content-width, 1200px);
   display: flex;
   flex-direction: column;
   gap: 16px;

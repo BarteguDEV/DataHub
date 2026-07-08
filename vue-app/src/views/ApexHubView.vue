@@ -217,7 +217,7 @@ onMounted(fetchAll)
 </script>
 
 <style scoped>
-.hub-view { width: 100%; max-width: 1100px; }
+.hub-view { width: 100%; max-width: var(--content-width, 1100px); }
 
 .hub-section-header { margin-bottom: 28px; }
 .section-title { font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0; }

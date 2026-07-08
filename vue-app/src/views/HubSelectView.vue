@@ -36,6 +36,7 @@
         @click="navigate(hub.route)"
       >
         <div class="tile-accent"></div>
+        <div class="hub-border"></div>
         <div class="tile-content">
           <div class="tile-icon" v-html="hub.icon"></div>
           <h2 class="tile-title">{{ hub.title }}</h2>
@@ -62,14 +63,8 @@
               </span>
             </div>
           </div>
-
-          <div class="tile-footer">
-            <span class="tile-action">Przejdź do huba</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
-            </svg>
-          </div>
         </div>
+        <span class="bottom-text">{{ hub.bottomText }}</span>
         <div class="tile-glow"></div>
       </article>
     </div>
@@ -115,6 +110,7 @@ const hubs = [
     cls: 'ddt',
     route: 'DdtHub',
     title: 'Developers Hub',
+    bottomText: 'DEVELOPERS HUB',
     desc: 'Integracje z Jira, Confluence, IAM, TeamCity, Informatica PowerCenter oraz zestaw narzędzi developerskich uruchamianych przez Streamlit.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
     modules: [
@@ -131,6 +127,7 @@ const hubs = [
     cls: 'apex',
     route: 'ApexHub',
     title: 'Business Hub',
+    bottomText: 'BUSINESS HUB',
     desc: 'Dashboardy KPI, raporty codzienne, statystyki systemowe i helicopter view na całą organizację. Dane z Oracle i Snowflake.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
     modules: [
@@ -145,6 +142,7 @@ const hubs = [
     cls: 'ai',
     route: 'AiHub',
     title: 'AI Hub',
+    bottomText: 'AI HUB',
     desc: 'Koncepty AI zgodne z regulacjami bankowymi, raporty HTML, eksperymenty i rozwiązania do użytku wewnętrznego.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>',
     modules: [
@@ -165,7 +163,7 @@ function navigate(name) {
 <style scoped>
 .hub-select {
   width: 100%;
-  max-width: 1100px;
+  max-width: var(--content-width, 1100px);
 }
 
 .welcome-section {
@@ -238,39 +236,91 @@ function navigate(name) {
   margin-bottom: 32px;
 }
 
+/* ──────── KAFELEK HUBU ──────── */
 .hub-tile {
   position: relative;
   border-radius: 16px;
-  overflow: hidden;
   cursor: pointer;
   border: 1px solid var(--border-color);
   background: var(--bg-card);
-  transition: all 0.3s ease;
+  transition: all 0.5s ease-in-out;
 }
 
 .hub-tile:hover {
-  transform: translateY(-4px);
+  border-radius: 16px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
+/* Akcent górny (zachowany, ale overflow nie obcina go — ma własne zaokrąglenie) */
 .tile-accent {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 4px;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
 }
 
 .hub-tile.ddt .tile-accent { background: linear-gradient(90deg, #00c853, #00e5ff); }
 .hub-tile.apex .tile-accent { background: linear-gradient(90deg, #ff9100, #ff3d00); }
 .hub-tile.ai .tile-accent { background: linear-gradient(90deg, #536dfe, #d500f9); }
 
+/* ──────── RAMKA ANIMOWANA (inspirowana efectem z kafelka UI) ──────── */
+.hub-border {
+  position: absolute;
+  inset: 0;
+  border: 2px solid;
+  border-radius: 16px;
+  opacity: 0;
+  transform: rotate(6deg);
+  transition: all 0.5s ease-in-out;
+  pointer-events: none;
+}
+
+.hub-tile.ddt .hub-border { border-color: #00c853; }
+.hub-tile.apex .hub-border { border-color: #ff9100; }
+.hub-tile.ai .hub-border { border-color: #536dfe; }
+
+.hub-tile:hover .hub-border {
+  inset: 12px;
+  opacity: 1;
+  transform: rotate(0);
+}
+
+/* ──────── TEKST NA DOLE (wjeżdża na hover) ──────── */
+.bottom-text {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  opacity: 0;
+  transition: all 0.5s ease-in-out;
+  pointer-events: none;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.hub-tile.ddt .bottom-text { color: #00c853; }
+.hub-tile.apex .bottom-text { color: #ff9100; }
+.hub-tile.ai .bottom-text { color: #536dfe; }
+
+.hub-tile:hover .bottom-text {
+  letter-spacing: 4px;
+  opacity: 1;
+}
+
+/* ──────── ZAWARTOŚĆ KAFELKA ──────── */
 .tile-content {
   position: relative;
-  padding: 28px 24px 24px;
+  padding: 28px 24px 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  transition: all 0.5s ease-in-out;
 }
 
 .tile-icon {
@@ -299,21 +349,6 @@ function navigate(name) {
   line-height: 1.6;
   color: var(--text-secondary);
   margin: 0;
-}
-
-.tile-stats {
-  display: flex;
-  gap: 16px;
-}
-
-.tile-stat {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.tile-stat strong {
-  color: var(--text-primary);
-  font-weight: 600;
 }
 
 /* Lista modułów w karcie */
@@ -404,32 +439,8 @@ function navigate(name) {
   color: var(--text-muted);
 }
 
-.tile-footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent-primary);
-  margin-top: 4px;
-}
-
-.hub-tile:hover .tile-footer svg {
-  transform: translateX(4px);
-  transition: transform 0.2s ease;
-}
-
 .tile-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s;
-  background: radial-gradient(ellipse at bottom right, rgba(0,200,83,0.06), transparent 60%);
-}
-
-.hub-tile:hover .tile-glow {
-  opacity: 1;
+  display: none;
 }
 
 /* Status bar */

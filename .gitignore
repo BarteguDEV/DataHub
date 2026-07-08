@@ -23,3 +23,7 @@ deployment/
 node_modules/
 vue-app/node_modules/
 static/vue/
+
+# Local dev scripts
+run_local.ps1
+run_local.bat

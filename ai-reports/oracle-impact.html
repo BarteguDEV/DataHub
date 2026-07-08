@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oracle Object Impact Analyzer — AI Generated</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #0b0d11; color: #e8eaed; padding: 40px; }
+  .container { max-width: 1000px; margin: 0 auto; }
+  .header { margin-bottom: 40px; }
+  .header h1 { font-size: 28px; font-weight: 700; color: #ff1744; }
+  .header .meta { color: rgba(232,234,237,0.4); font-size: 13px; margin-top: 8px; }
+  .kpi-row { display:grid; grid-template-columns: repeat(4,1fr); gap:16px; }
+  .kpi { }
+  .kpi-num { font-size:28px; font-weight:700; color:#ff1744; }
+  .kpi-label { font-size:12px; color:rgba(232,234,237,0.5); margin-top:4px; }
+  .section { background:#16181f; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:24px; margin-bottom:24px; }
+  .section h2 { font-size:18px; font-weight:600; margin-bottom:16px; color:#d50000; }
+  .row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .row:last-child { border:none; }
+  .name { font-family:'JetBrains Mono',monospace; font-size:13px; color:#e8eaed; flex:1; }
+  .badge { font-size:11px; padding:2px 10px; border-radius:100px; }
+  .badge-green { background:rgba(0,200,83,0.1); color:#00c853; }
+  .badge-blue { background:rgba(83,109,254,0.1); color:#536dfe; }
+  .badge-red { background:rgba(255,23,68,0.1); color:#ff1744; }
+  .badge-amber { background:rgba(255,145,0,0.1); color:#ff9100; }
+  .badge-purple { background:rgba(124,77,255,0.1); color:#7c4dff; }
+  .tag { display:inline-block; font-size:11px; padding:2px 8px; border-radius:4px; background:rgba(255,255,255,0.04); color:rgba(232,234,237,0.5); margin-right:4px; }
+  .sql { background:#0b0d11; border-radius:8px; padding:16px; font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.6; color:rgba(232,234,237,0.7); overflow-x:auto; margin-top:12px; }
+  .key { color:#536dfe; }
+  .tref { color:#00e5ff; }
+  .recommend { padding:12px 16px; border-radius:8px; margin-bottom:8px; display:flex; gap:12px; align-items:flex-start; }
+  .recommend-icon { font-size:18px; flex-shrink:0; }
+  .recommend-text { font-size:13px; line-height:1.5; color:rgba(232,234,237,0.8); }
+  .rec-high { background:rgba(0,200,83,0.06); border-left:3px solid #00c853; }
+  .rec-med { background:rgba(83,109,254,0.06); border-left:3px solid #536dfe; }
+  .rec-low { background:rgba(255,145,0,0.06); border-left:3px solid #ff9100; }
+  .gantt { background:#0b0d11; border-radius:8px; padding:20px; margin-top:12px; }
+  .gantt-title { font-size:11px; font-weight:600; color:rgba(232,234,237,0.4); margin-bottom:16px; letter-spacing:0.5px; }
+  .gantt-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .gantt-row:last-child { margin-bottom:0; }
+  .gantt-label { font-family:'JetBrains Mono',monospace; font-size:11px; color:#e8eaed; width:200px; flex-shrink:0; text-align:right; }
+  .gantt-track { flex:1; height:22px; position:relative; background:rgba(255,255,255,0.03); border-radius:4px; overflow:visible; }
+  .gantt-bar { position:absolute; top:0; left:0; height:100%; border-radius:4px; min-width:4px; display:flex; align-items:center; padding:0 8px; }
+  .gantt-bar span { font-size:9px; font-weight:600; color:#000; white-space:nowrap; }
+  .gantt-collision { position:absolute; top:-4px; width:14px; height:30px; background:rgba(255,23,68,0.2); border:1px dashed #ff1744; border-radius:3px; z-index:2; }
+  .gantt-footer { display:flex; justify-content:space-between; font-size:10px; color:rgba(232,234,237,0.3); margin-top:8px; font-family:'JetBrains Mono',monospace; }
+  .hbar { display:flex; align-items:center; gap:12px; padding:6px 0; }
+  .hbar-label { font-size:12px; color:rgba(232,234,237,0.6); width:120px; flex-shrink:0; }
+  .hbar-track { flex:1; height:18px; background:rgba(255,255,255,0.03); border-radius:100px; overflow:hidden; position:relative; }
+  .hbar-fill { height:100%; border-radius:100px; display:flex; align-items:center; justify-content:flex-end; padding:0 8px; min-width:20px; }
+  .hbar-fill span { font-size:9px; font-weight:700; color:#000; }
+  .hbar-value { font-size:12px; font-weight:600; width:60px; flex-shrink:0; text-align:right; }
+  .footer { text-align:center; color:rgba(232,234,237,0.2); font-size:12px; padding:40px 0; }
+  .width-ctrl { display:flex; align-items:center; gap:8px; margin-bottom:24px; padding:8px 16px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px; }
+  .width-ctrl span { font-size:11px; color:rgba(232,234,237,0.4); }
+  .width-ctrl input { flex:1; -webkit-appearance:none; appearance:none; height:4px; border-radius:100px; background:rgba(255,255,255,0.08); outline:none; cursor:pointer; }
+  .width-ctrl input::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:#536dfe; border:2px solid #16181f; cursor:pointer; }
+  .width-ctrl input::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:#536dfe; border:2px solid #16181f; cursor:pointer; }
+  .width-ctrl .wval { font-size:11px; font-weight:600; color:rgba(232,234,237,0.6); min-width:36px; text-align:right; font-family:'JetBrains Mono',monospace; }
+</style>
+</head>
+<body>
+<div class="container" id="report-container">
+  <div class="header">
+    <h1>🎯 Oracle Object Impact Analyzer</h1>
+    <div class="meta">Wygenerowano przez AI • 2026-07-07 • Źródło: Oracle Dictionary</div>
+  </div>
+  <div class="width-ctrl">
+    <span>⊞ Szerokość</span>
+    <input type="range" id="widthSlider" min="600" max="1600" step="50" value="1000" oninput="document.getElementById('report-container').style.maxWidth=this.value+'px';document.getElementById('wval').textContent=this.value">
+    <span class="wval" id="wval">1000</span>
+  </div>  <div class="section">
+    <h2>📊 Podsumowanie</h2>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-num" style="color:#ff1744;">81</div><div class="kpi-label">Impact Score</div></div>
+      <div class="kpi"><div class="kpi-num" style="">34</div><div class="kpi-label">Zależne widoki</div></div>
+      <div class="kpi"><div class="kpi-num" style="">12</div><div class="kpi-label">Procedury</div></div>
+      <div class="kpi"><div class="kpi-num" style="">7</div><div class="kpi-label">Mappingi ETL</div></div>
+      <div class="kpi"><div class="kpi-num" style="">4</div><div class="kpi-label">Raporty BI</div></div>
+    </div>  </div>
+  <div class="section">
+    <h2>🎯 Obiekt: FCT_SALES (analiza wpływu)</h2>
+
+    <div class="row"><span class="badge badge-red">CRIT</span><span class="name">34 widoki bezpośrednio zależne od FCT_SALES</span></div>
+    <div class="row"><span class="badge badge-red">CRIT</span><span class="name">12 procedur PL/SQL wymagających rekompilacji</span></div>
+    <div class="row"><span class="badge badge-amber">HIGH</span><span class="name">7 mappingów PowerCenter korzystających z tabeli</span></div>
+    <div class="row"><span class="badge badge-amber">HIGH</span><span class="name">4 raporty BI (PowerBI/Tableau) oparte na widokach zależnych</span></div>
+    <div class="row"><span class="badge badge-blue">INFO</span><span class="name">3 indeksy do przebudowania po zmianie struktury</span></div>
+      </div>
+  <div class="section">
+    <h2>🗺️ Ścieżki zależności (przykład)</h2>
+
+    <div class="sql">
+FCT_SALES<br>
+&nbsp;&nbsp;├──▶ V_SALES_DAILY (widok)<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;├──▶ V_KPI_MONTHLY (widok) → raport BI "Miesięczne KPI"<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;└──▶ PKG_SALES_REPORT.proc_calc_daily (procedura)<br>
+&nbsp;&nbsp;├──▶ V_SALES_BY_REGION (widok) → raport BI "Sprzedaż regionalna"<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;└──▶ m_LOAD_REGION_KPI (mapping PowerCenter)<br>
+&nbsp;&nbsp;├──▶ m_LOAD_SALES_FACT (mapping PowerCenter)<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;└──▶ wf_DAILY_SALES_LOAD (workflow)<br>
+&nbsp;&nbsp;└──▶ PKG_ETL_VALIDATION.proc_validate_sales (procedura)
+    </div>  </div>
+  <div class="section">
+    <h2>✅ Rekomendacje</h2>
+
+      <div class="recommend rec-high"><span class="recommend-icon">🔷</span><span class="recommend-text">Przeanalizuj wszystkie 34 widoki — zidentyfikuj które można pominąć w trakcie zmiany</span></div>
+
+      <div class="recommend rec-high"><span class="recommend-icon">🔷</span><span class="recommend-text">Zaplanuj zmianę poza godzinami szczytu — oszacowany czas: 4h</span></div>
+
+      <div class="recommend rec-med"><span class="recommend-icon">🔷</span><span class="recommend-text">Powiadom właścicieli 4 raportów BI o planowanej zmianie struktury</span></div>
+
+      <div class="recommend rec-med"><span class="recommend-icon">🔷</span><span class="recommend-text">Przygotuj skrypt rekompilacji widoków i procedur po zmianie</span></div>
+
+      </div>
+  <div class="footer">Raport wygenerowany przez AI • Enterprise Hub Portal • POC v0.9.0</div>
+</div>
+</body>
+</html>
