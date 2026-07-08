@@ -93,19 +93,25 @@
         </div>
       </div>
 
-      <!-- Dekoracyjne statystyki -->
+      <!-- Dekoracyjne statystyki — Magic Card effect -->
       <div class="login-stats">
         <div class="stat-item">
-          <span class="stat-num">3</span>
-          <span class="stat-label">Huby</span>
+          <div class="stat-item-inner">
+            <span class="stat-num">3</span>
+            <span class="stat-label">Huby</span>
+          </div>
         </div>
         <div class="stat-item">
-          <span class="stat-num">12+</span>
-          <span class="stat-label">Moduły</span>
+          <div class="stat-item-inner">
+            <span class="stat-num">12+</span>
+            <span class="stat-label">Moduły</span>
+          </div>
         </div>
         <div class="stat-item">
-          <span class="stat-num">6</span>
-          <span class="stat-label">Integracje</span>
+          <div class="stat-item-inner">
+            <span class="stat-num">6</span>
+            <span class="stat-label">Integracje</span>
+          </div>
         </div>
       </div>
     </div>
@@ -523,20 +529,70 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
   border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-/* Statystyki boczne */
+/* ====================================
+   STATYSTYKI — MAGIC CARD EFFECT
+   ==================================== */
 .login-stats {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
+/* Kafel z gradientową ramką */
 .stat-item {
-  text-align: center;
-  padding: 20px 28px;
-  background: rgba(22, 24, 31, 0.4);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  --gradient: linear-gradient(135deg, #00c853, #00e5ff);
+  background: var(--gradient);
+  padding: 2px;
   border-radius: 14px;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Poświata (glow) za kaflem */
+.stat-item::after {
+  position: absolute;
+  content: '';
+  top: 30px;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  height: 100%;
+  width: 100%;
+  transform: scale(0.8);
+  filter: blur(25px);
+  background: var(--gradient);
+  transition: opacity 0.5s;
+}
+
+/* Wewnętrzna karta — ciemne tło zachowujące obecną estetykę */
+.stat-item-inner {
+  background: rgba(7, 9, 14, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 20px 28px;
+  text-align: center;
+}
+
+/* Hover: glow znika, kafel delikatnie unosi się w górę */
+.stat-item:hover::after {
+  opacity: 0;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 200, 83, 0.25);
+}
+
+/* Hover: tekst przechodzi w gradient */
+.stat-item:hover .stat-num,
+.stat-item:hover .stat-label {
+  color: transparent;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 .stat-num {
@@ -545,6 +601,7 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
   font-weight: 700;
   color: #00c853;
   line-height: 1;
+  transition: all 0.5s;
 }
 
 .stat-label {
@@ -554,5 +611,6 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
   letter-spacing: 1px;
   margin-top: 6px;
   display: block;
+  transition: all 0.5s;
 }
 </style>
