@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.7.0"
+APP_VERSION = "v0.8.0"
 
 # ===========================================================================
 # JWT Config
@@ -170,6 +170,13 @@ try:
         db_session.add(admin)
         db_session.commit()
         print("Utworzono domyślnego użytkownika: admin / admin123")
+
+    demo_existing = db_session.query(User).filter_by(username="demo").first()
+    if not demo_existing:
+        demo = User(username="demo", password_hash=_hash_password("demo123"))
+        db_session.add(demo)
+        db_session.commit()
+        print("Utworzono użytkownika testowego: demo / demo123")
 except IntegrityError:
     db_session.rollback()
 finally:
