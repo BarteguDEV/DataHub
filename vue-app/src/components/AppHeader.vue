@@ -149,9 +149,9 @@ function goBack() {
   router.push({ name: 'HubSelect' })
 }
 
-function handleLogout() {
+async function handleLogout() {
   showMenu.value = false
-  logout()
+  await logout()
   router.push({ name: 'Login' })
 }
 
