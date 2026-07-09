@@ -102,7 +102,7 @@
         <!-- Stopka -->
         <div class="login-footer">
           <span class="footer-version">{{ appVersion }}</span>
-          <span class="footer-env">FastAPI + Vue.js</span>
+          <span class="footer-env">FastAPI + Vue.js + Python</span>
           <span class="footer-dev">developer: Bartegu</span>
         </div>
       </div>
@@ -114,7 +114,7 @@
           <span class="stat-label">Huby</span>
         </div>
         <div class="stat-item">
-          <span class="stat-num">12+</span>
+          <span class="stat-num">15</span>
           <span class="stat-label">Moduły</span>
         </div>
         <div class="stat-item">
@@ -122,7 +122,7 @@
           <span class="stat-label">Integracje</span>
         </div>
         <div class="stat-item">
-          <span class="stat-num">8</span>
+          <span class="stat-num">4</span>
           <span class="stat-label">Systemy</span>
         </div>
       </div>
@@ -165,7 +165,7 @@ const availableSystems = [
   { id: 'EMIR_3', label: 'EMIR_3' },
   { id: 'WITIP', label: 'WITIP' },
   { id: 'SFTR', label: 'SFTR' },
-  { id: 'FATCRS', label: 'FATCA / CRS' },
+  { id: 'FATCRS', label: 'FATCRS' },
 ]
 
 onMounted(fetchVersion)

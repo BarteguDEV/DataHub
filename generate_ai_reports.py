@@ -812,7 +812,7 @@ def main():
         html = make_html(r)
         with open(path, "w", encoding="utf-8") as f:
             f.write(html)
-        print(f"  ✓ {fname}")
+        print(f"  [OK] {fname}")
     print(f"\nWygenerowano {len(reports)} raportów w {OUT}")
 
 if __name__ == "__main__":

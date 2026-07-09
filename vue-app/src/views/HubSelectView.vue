@@ -232,7 +232,7 @@ function navigate(name) {
 /* Siatka hubów */
 .hub-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
   margin-bottom: 32px;
 }
@@ -240,6 +240,7 @@ function navigate(name) {
 /* ──────── KAFELEK HUBU ──────── */
 .hub-tile {
   position: relative;
+  min-width: 0;
   border-radius: 16px;
   cursor: pointer;
   border: 1px solid var(--border-color);

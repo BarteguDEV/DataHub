@@ -26,7 +26,7 @@ watch(contentWidth, (val) => {
 
 export function useContentWidth() {
   function setWidth(px) {
-    contentWidth.value = Math.max(800, Math.min(1600, px))
+    contentWidth.value = Math.max(800, Math.min(1900, px))
   }
 
   return {

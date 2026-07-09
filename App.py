@@ -13,6 +13,7 @@ DataHub — FastAPI backend.
 
 import asyncio
 import atexit
+import json
 import os
 import pathlib
 import random
@@ -45,7 +46,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.14.0"
+APP_VERSION = "v0.15.1"
 
 # ===========================================================================
 # JWT Config
@@ -483,32 +484,32 @@ def _serve_business_data(kind: str):
 
 # Nowe endpointy: /api/business/*
 @app.get("/api/business/kpi")
-def business_kpi():
+def business_kpi(payload: dict = Depends(get_current_user)):
     return _serve_business_data("kpi")
 
 
 @app.get("/api/business/trends")
-def business_trends():
+def business_trends(payload: dict = Depends(get_current_user)):
     return _serve_business_data("trends")
 
 
 @app.get("/api/business/reports")
-def business_reports():
+def business_reports(payload: dict = Depends(get_current_user)):
     return _serve_business_data("reports")
 
 
 @app.get("/api/business/etl")
-def business_etl():
+def business_etl(payload: dict = Depends(get_current_user)):
     return _serve_business_data("etl")
 
 
 @app.get("/api/business/sla")
-def business_sla():
+def business_sla(payload: dict = Depends(get_current_user)):
     return _serve_business_data("sla")
 
 
 @app.get("/api/business/alerts")
-def business_alerts():
+def business_alerts(payload: dict = Depends(get_current_user)):
     return _serve_business_data("alerts")
 
 
@@ -541,6 +542,24 @@ def apex_sla_compat():
 @app.get("/api/apex/alerts")
 def apex_alerts_compat():
     return _serve_business_data("alerts")
+
+
+# ===========================================================================
+# API — Test coverage
+# ===========================================================================
+
+
+@app.get("/api/coverage")
+def get_test_coverage():
+    """Zwraca statyczny JSON z raportem pokrycia testami."""
+    cov_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "test-coverage.json")
+    if os.path.exists(cov_path):
+        with open(cov_path) as f:
+            return JSONResponse(content=json.load(f))
+    return JSONResponse(content={
+        "error": "Brak raportu coverage — uruchom: python generate_coverage.py",
+        "summary": {"backend_total": 0, "frontend_total": 0, "reports_ok": 0},
+    })
 
 
 # ===========================================================================

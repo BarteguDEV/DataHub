@@ -19,6 +19,13 @@ Thumbs.db
 .python_packages/
 deployment/
 
+# Coverage reports (regenerowane lokalnie)
+coverage.json
+static/test-coverage.json
+
+# AI reports (regenerowane przez generate_ai_reports.py)
+ai-reports/
+
 # Node / Vue
 node_modules/
 vue-app/node_modules/

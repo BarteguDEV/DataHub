@@ -532,4 +532,4 @@ elif st.session_state.tab_idx == 5:
 # Footer
 # ===========================================================================
 st.markdown("---")
-st.caption("DataHub — Streamlit Dashboard migracji | v0.12.0")
+st.caption("DataHub — Streamlit Dashboard migracji | v0.13.1")

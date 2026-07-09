@@ -91,7 +91,7 @@
               type="range"
               class="ws-range"
               min="800"
-              max="1600"
+              max="1900"
               step="50"
               :value="contentWidth"
               @input="setWidth(Number($event.target.value))"
@@ -145,6 +145,12 @@
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
             About me
+          </button>
+          <button class="dropdown-item coverage-item" @click.stop="showCoverage = true; showMenu = false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>
+            </svg>
+            Pokrycie testami
           </button>
           <button class="dropdown-item" @click.stop="handleLogout">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -207,11 +213,78 @@
         </div>
       </transition>
     </Teleport>
+
+    <!-- === COVERAGE MODAL === -->
+    <Teleport to="body">
+      <transition name="modal">
+        <div v-if="showCoverage" class="about-overlay" @click.self="showCoverage = false" @keyup.esc="showCoverage = false">
+          <div class="about-card">
+            <div class="about-banner" style="background:linear-gradient(135deg,rgba(105,240,174,0.2),rgba(0,229,255,0.1))">
+              <div class="about-avatar-wrapper" style="background:linear-gradient(135deg,#69f0ae,#00e5ff)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>
+                </svg>
+              </div>
+              <div class="about-banner-label">
+                <svg class="about-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>Pokrycie testami</span>
+              </div>
+            </div>
+
+            <div class="about-body" v-if="coverageLoading">
+              <p class="coverage-placeholder">Ładowanie danych...</p>
+            </div>
+
+            <div class="about-body" v-else-if="coverageData && !coverageData.error">
+              <h2 class="about-name" style="margin-bottom:16px">Raport pokrycia</h2>
+
+              <div class="coverage-summary">
+                <div class="cov-stat">
+                  <span class="cov-num" :style="{ color: pctColor(coverageData.summary.backend_total) }">{{ coverageData.summary.backend_total }}%</span>
+                  <span class="cov-label">Backend (Python)</span>
+                </div>
+                <div class="cov-stat">
+                  <span class="cov-num" :style="{ color: pctColor(coverageData.summary.frontend_total) }">{{ coverageData.summary.frontend_total }}%</span>
+                  <span class="cov-label">Frontend (Vue)</span>
+                </div>
+                <div class="cov-stat">
+                  <span class="cov-num" :style="{ color: coverageData.summary.reports_ok === 15 ? '#00c853' : '#ffab00' }">{{ coverageData.summary.reports_ok }}/15</span>
+                  <span class="cov-label">Raporty AI</span>
+                </div>
+              </div>
+
+              <p class="coverage-note" v-if="coverageData.summary.last_run">
+                Ostatnie uruchomienie: {{ coverageData.summary.last_run.replace('T', ' ').slice(0, 16) }}
+              </p>
+
+              <div class="about-info" style="margin-top:16px">
+                <div class="about-info-row">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Uruchom: <code style="color:var(--accent-primary)">python generate_coverage.py</code></span>
+                </div>
+                <div class="about-info-row">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>Wymagane: <code>pytest</code>, <code>pytest-cov</code>, <code>vitest</code></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="about-body" v-else>
+              <p class="coverage-placeholder" style="color:#ff5252">Brak danych. Uruchom testy lokalnie.</p>
+            </div>
+
+            <button class="about-close-btn" @click="showCoverage = false">Zamknij</button>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
   </header>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/stores/auth'
 import { useVersion } from '@/stores/version'
@@ -228,6 +301,29 @@ const showMenu = ref(false)
 const showHubMenu = ref(false)
 const backendOnline = ref(false)
 const showAbout = ref(false)
+const showCoverage = ref(false)
+const coverageData = ref(null)
+const coverageLoading = ref(false)
+
+async function fetchCoverage() {
+  coverageLoading.value = true
+  coverageData.value = null
+  try {
+    const res = await fetch('/api/coverage')
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    coverageData.value = await res.json()
+  } catch (e) {
+    console.error('[coverage] fetch failed:', e)
+    coverageData.value = { error: e.message || 'Nie udało się pobrać danych' }
+  } finally {
+    coverageLoading.value = false
+  }
+}
+
+// Gdy modal coverage się otwiera — pobierz dane
+watch(showCoverage, (val) => {
+  if (val) fetchCoverage()
+})
 
 // Streamlit status — emitowany z DdtHubView przez zdarzenie lub prosty fetch
 const streamlitOnline = ref(null)
@@ -284,6 +380,12 @@ onMounted(async () => {
 onUnmounted(() => {
   document.removeEventListener('click', closeDropdown)
 })
+
+function pctColor(val) {
+  if (val >= 80) return '#00c853'
+  if (val >= 50) return '#ffab00'
+  return '#ff5252'
+}
 
 function closeDropdown(e) {
   if (showStatsPanel.value) showStatsPanel.value = false
@@ -872,7 +974,8 @@ function closeDropdown(e) {
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 600;
-  margin-left: 0;
+  margin-left: 74px; /* przesunięcie obok avatar-wrapper (left:20px + width:64px - 10px odstęp) */
+  z-index: 1;
 }
 .about-icon {
   color: var(--accent-primary);
