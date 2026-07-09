@@ -17,19 +17,19 @@ const routes = [
   {
     path: '/ddt',
     name: 'DdtHub',
-    component: () => import('@/views/DdtHubView.vue'),
+    component: () => import('@/hubs/developers/DevelopersHubView.vue'),
     meta: { title: 'Developers Hub', requiresAuth: true, hub: 'ddt' },
   },
   {
     path: '/business',
     name: 'BusinessHub',
-    component: () => import('@/views/BusinessHubView.vue'),
+    component: () => import('@/hubs/business/BusinessHubView.vue'),
     meta: { title: 'Business Hub', requiresAuth: true, hub: 'business' },
   },
   {
     path: '/ai',
     name: 'AiHub',
-    component: () => import('@/views/AiHubView.vue'),
+    component: () => import('@/hubs/ai/AiHubView.vue'),
     meta: { title: 'AI Hub', requiresAuth: true, hub: 'ai' },
   },
   {

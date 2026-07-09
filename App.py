@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.12.0"
+APP_VERSION = "v0.13.0"
 
 # ===========================================================================
 # JWT Config
@@ -201,7 +201,7 @@ def _start_streamlit():
         print(f"[streamlit] Already running on port {STREAMLIT_PORT}")
         return
 
-    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "streamlit_app.py")
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vue-app", "src", "hubs", "developers", "streamlit_app.py")
     cmd = [
         sys.executable, "-m", "streamlit", "run", script,
         "--server.port", str(STREAMLIT_PORT),
