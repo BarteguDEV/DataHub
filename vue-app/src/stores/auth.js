@@ -46,8 +46,8 @@ const state = reactive({
 })
 
 export function useAuth() {
-  async function login(username, password) {
-    const res = await loginUser(username, password)
+  async function login(username, password, systemId) {
+    const res = await loginUser(username, password, systemId)
 
     // Zapisz JWT
     setToken(res.access_token)
@@ -58,6 +58,7 @@ export function useAuth() {
       username: res.user.username,
       role: res.user.role || 'Developer',
       initials: res.user.initials || computeInitials(res.user.username),
+      system: res.system || systemId || null,
       loginTime: new Date().toLocaleTimeString('pl-PL'),
     }
     state.user = user

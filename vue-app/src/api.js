@@ -50,10 +50,10 @@ async function request(path, options = {}) {
   return data
 }
 
-export function loginUser(username, password) {
+export function loginUser(username, password, systemId) {
   return request('/login', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, system: systemId }),
   })
 }
 

@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.13.0"
+APP_VERSION = "v0.14.0"
 
 # ===========================================================================
 # JWT Config
@@ -85,6 +85,7 @@ Base.metadata.create_all(bind=engine)
 class LoginRequest(BaseModel):
     username: str
     password: str
+    system: Optional[str] = None
 
 
 class RegisterRequest(BaseModel):
@@ -96,6 +97,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: dict
+    system: Optional[str] = None
 
 
 class UserResponse(BaseModel):
@@ -315,7 +317,8 @@ def login(body: LoginRequest):
     if not user or not _verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Niepoprawna nazwa użytkownika lub hasło")
 
-    token = _create_access_token({"sub": user.username, "id": user.id})
+    system = body.system or "EMIR_3"
+    token = _create_access_token({"sub": user.username, "id": user.id, "system": system})
     return TokenResponse(
         access_token=token,
         user={
@@ -324,6 +327,7 @@ def login(body: LoginRequest):
             "role": "Developer",
             "initials": _compute_initials(user.username),
         },
+        system=system,
     )
 
 

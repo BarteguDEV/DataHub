@@ -54,42 +54,59 @@
       </div>
     </div>
 
+    <!-- System badge — centrum headera -->
+    <div v-if="user.system" class="system-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <span class="system-label">{{ user.system }}</span>
+    </div>
+
     <div class="header-right">
-      <!-- Status backendu + wersja -->
-      <div class="header-chip backend-indicator" :class="{ online: backendOnline }">
-        <span class="chip-dot"></span>
-        <span class="chip-label">FastAPI</span>
-      </div>
-      <div
-        v-if="streamlitOnline !== null"
-        class="header-chip streamlit-indicator"
-        :class="{ online: streamlitOnline }"
-        title="Status Streamlit"
-      >
-        <span class="chip-dot"></span>
-        <span class="chip-label">Streamlit</span>
-      </div>
-      <div class="header-chip version-chip">
-        <span class="chip-label">{{ appVersion }}</span>
+      <!-- Badge'y w headerze — rozwijane obok przycisku -->
+      <div class="stats-items" :class="{ open: showStatsPanel }">
+        <div class="stats-item-inner">
+          <div class="header-chip backend-indicator" :class="{ online: backendOnline }">
+            <span class="chip-dot"></span>
+            <span class="chip-label">FastAPI</span>
+          </div>
+          <div
+            v-if="streamlitOnline !== null"
+            class="header-chip streamlit-indicator"
+            :class="{ online: streamlitOnline }"
+            title="Status Streamlit"
+          >
+            <span class="chip-dot"></span>
+            <span class="chip-label">Streamlit</span>
+          </div>
+          <div class="header-chip version-chip">
+            <span class="chip-label">{{ appVersion }}</span>
+          </div>
+          <div class="width-slider" title="Dopasuj szerokość widoku">
+            <svg class="ws-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+            <input
+              type="range"
+              class="ws-range"
+              min="800"
+              max="1600"
+              step="50"
+              :value="contentWidth"
+              @input="setWidth(Number($event.target.value))"
+            />
+            <span class="ws-label">{{ contentWidth }}</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Slider szerokości -->
-      <div class="width-slider" title="Dopasuj szerokość widoku">
-        <svg class="ws-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
-          <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+      <!-- Przycisk Stats ← rozwija/zwiija badge'y -->
+      <button class="stats-toggle" :class="{ open: showStatsPanel }" @click.stop="showStatsPanel = !showStatsPanel" title="Status i ustawienia">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
-        <input
-          type="range"
-          class="ws-range"
-          min="800"
-          max="1600"
-          step="50"
-          :value="contentWidth"
-          @input="setWidth(Number($event.target.value))"
-        />
-        <span class="ws-label">{{ contentWidth }}</span>
-      </div>
+      </button>
 
       <!-- Użytkownik -->
       <div class="header-user">
@@ -206,6 +223,7 @@ const { state, logout } = useAuth()
 const { appVersion, fetchVersion } = useVersion()
 const { contentWidth, setWidth } = useContentWidth()
 
+const showStatsPanel = ref(false)
 const showMenu = ref(false)
 const showHubMenu = ref(false)
 const backendOnline = ref(false)
@@ -268,6 +286,7 @@ onUnmounted(() => {
 })
 
 function closeDropdown(e) {
+  if (showStatsPanel.value) showStatsPanel.value = false
   if (showMenu.value) showMenu.value = false
   if (showHubMenu.value) showHubMenu.value = false
 }
@@ -349,6 +368,53 @@ function closeDropdown(e) {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+/* Kontener badge'ów rozwijanych w bok */
+.stats-items {
+  overflow: hidden;
+  max-width: 0;
+  transition: max-width 0.35s ease, opacity 0.3s ease;
+  opacity: 0;
+  display: flex;
+  align-items: center;
+}
+.stats-items.open {
+  max-width: 500px;
+  opacity: 1;
+}
+
+.stats-item-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+/* Przycisk stats */
+.stats-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.stats-toggle:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+.stats-toggle.open {
+  background: rgba(83, 109, 254, 0.1);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
 }
 
 .header-chip {
@@ -542,6 +608,48 @@ function closeDropdown(e) {
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+/* System badge — centrum headera */
+.system-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #69f0ae;
+  background: rgba(0, 200, 83, 0.08);
+  border: 1px solid rgba(0, 200, 83, 0.2);
+  animation: systemPulse 3s ease-in-out infinite;
+  white-space: nowrap;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.system-badge svg {
+  color: #69f0ae;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.system-label {
+  line-height: 1;
+}
+
+@keyframes systemPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 200, 83, 0);
+    border-color: rgba(0, 200, 83, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 12px 0 rgba(0, 200, 83, 0.15);
+    border-color: rgba(0, 200, 83, 0.4);
+  }
 }
 
 /* Hub switcher — zastępuje sidebar */

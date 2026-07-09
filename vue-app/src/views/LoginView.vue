@@ -70,6 +70,20 @@
             </div>
           </div>
 
+          <div class="input-group">
+            <label for="system">System</label>
+            <div class="input-wrapper select-wrapper">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+              <select id="system" v-model="systemId" class="select-input">
+                <option v-for="s in availableSystems" :key="s.id" :value="s.id">
+                  {{ s.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
           <p v-if="error" class="error-msg">{{ error }}</p>
 
           <button
@@ -143,8 +157,16 @@ const { appVersion, fetchVersion } = useVersion()
 
 const username = ref('')
 const password = ref('')
+const systemId = ref('EMIR_3')
 const error = ref('')
 const loggingIn = ref(false)
+
+const availableSystems = [
+  { id: 'EMIR_3', label: 'EMIR_3' },
+  { id: 'WITIP', label: 'WITIP' },
+  { id: 'SFTR', label: 'SFTR' },
+  { id: 'FATCRS', label: 'FATCA / CRS' },
+]
 
 onMounted(fetchVersion)
 
@@ -157,7 +179,7 @@ async function handleLogin() {
   loggingIn.value = true
 
   try {
-    await login(username.value.trim(), password.value)
+    await login(username.value.trim(), password.value, systemId.value)
     router.push({ name: 'HubSelect' })
   } catch (e) {
     error.value = e.message
@@ -473,6 +495,44 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 }
 
 .input-wrapper input:focus {
+  border-color: #00c853;
+  box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.1);
+}
+
+.select-wrapper select {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  background: rgba(11, 13, 17, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #e8eaed;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.select-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgba(232, 234, 237, 0.3);
+  border-bottom: 2px solid rgba(232, 234, 237, 0.3);
+  transform: rotate(45deg);
+  pointer-events: none;
+  margin-top: -6px;
+}
+
+.select-wrapper select:hover {
+  border-color: rgba(0, 200, 83, 0.3);
+}
+
+.select-wrapper select:focus {
   border-color: #00c853;
   box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.1);
 }

@@ -36,7 +36,6 @@
         @click="navigate(hub.route)"
       >
         <div class="tile-accent"></div>
-        <div class="hub-border"></div>
         <div class="tile-content">
           <div class="tile-icon" v-html="hub.icon"></div>
           <h2 class="tile-title">{{ hub.title }}</h2>
@@ -111,7 +110,7 @@ const hubs = [
     route: 'DdtHub',
     title: 'Developers Hub',
     bottomText: 'DEVELOPERS HUB',
-    desc: 'Integracje z Jira, Confluence, IAM, TeamCity, Informatica PowerCenter oraz zestaw narzędzi developerskich uruchamianych przez Streamlit.',
+    desc: 'Dashboard Streamlit symulujący migrację 5 systemów (Jira, Confluence, IAM, TeamCity, Informatica) z interaktywnymi prognozami i kontrolkami.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
     modules: [
       { name: 'Streamlit POC', author: 'Bartegu', version: 'v0.5.0', status: 'active' },
@@ -128,13 +127,13 @@ const hubs = [
     route: 'BusinessHub',
     title: 'Business Hub',
     bottomText: 'BUSINESS HUB',
-    desc: 'Dashboardy KPI, raporty codzienne, statystyki systemowe i helicopter view na całą organizację. Dane z Oracle i Snowflake.',
+    desc: 'KPI, SLA procesów ETL, lista alertów i aktywności w czasie rzeczywistym. Wszystko oparte na symulowanych danych z API — gotowe szkielet pod docelowe integracje.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
     modules: [
-      { name: 'KPI Dashboard', author: 'M. Kowalski', version: 'v4.2.1', status: 'active' },
-      { name: 'Oracle Reports', author: 'P. Adamski', version: 'v2.0.0', status: 'active' },
-      { name: 'Snowflake Analytics', author: 'Bartegu', version: 'v1.5.0', status: 'active' },
-      { name: 'SLA Monitor', author: 'M. Kowalski', version: 'v1.1.0', status: 'active' },
+      { name: 'KPI Dashboard', author: 'Bartegu', version: 'v1.0.0', status: 'active' },
+      { name: 'ETL Workflow Monitor', author: 'Bartegu', version: 'v1.0.0', status: 'active' },
+      { name: 'SLA Compliance', author: 'Bartegu', version: 'v1.0.0', status: 'active' },
+      { name: 'Alerty i aktywność', author: 'Bartegu', version: 'v1.0.0', status: 'active' },
     ],
   },
   {
@@ -143,12 +142,14 @@ const hubs = [
     route: 'AiHub',
     title: 'AI Hub',
     bottomText: 'AI HUB',
-    desc: 'Koncepty AI zgodne z regulacjami bankowymi, raporty HTML, eksperymenty i rozwiązania do użytku wewnętrznego.',
+    desc: '15 raportów AI z analizą SQL, ETL, jakości danych, ryzyka wdrożenia i dokumentacji. Każdy z metryką, ustaleniami i rekomendacjami.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>',
     modules: [
-      { name: 'SQL Lineage', author: 'Bartegu', version: 'v0.3.0', status: 'alpha' },
-      { name: 'Auto Test Generator', author: 'A. Nowak', version: 'v0.2.0', status: 'alpha' },
-      { name: 'Data Mapping', author: 'Bartegu', version: 'v0.1.0', status: 'concept' },
+      { name: 'SQL Performance Advisor', author: 'A. Kowalski', version: 'v2.3.1', status: 'active' },
+      { name: 'ETL Dependency Analyzer', author: 'J. Kamiński', version: 'v2.0.2', status: 'active' },
+      { name: 'Deployment Risk Analyzer', author: 'A. Wójcik', version: 'v1.2.0', status: 'active' },
+      { name: 'Data Quality Analyzer', author: 'Ł. Dąbrowski', version: 'v2.0.0', status: 'active' },
+      { name: 'Documentation Generator', author: 'K. Kozłowski', version: 'v2.1.0', status: 'active' },
     ],
   },
 ]
@@ -266,27 +267,7 @@ function navigate(name) {
 .hub-tile.business .tile-accent { background: linear-gradient(90deg, #ff9100, #ff3d00); }
 .hub-tile.ai .tile-accent { background: linear-gradient(90deg, #536dfe, #d500f9); }
 
-/* ──────── RAMKA ANIMOWANA (inspirowana efectem z kafelka UI) ──────── */
-.hub-border {
-  position: absolute;
-  inset: 0;
-  border: 2px solid;
-  border-radius: 16px;
-  opacity: 0;
-  transform: rotate(6deg);
-  transition: all 0.5s ease-in-out;
-  pointer-events: none;
-}
-
-.hub-tile.ddt .hub-border { border-color: #00c853; }
-.hub-tile.business .hub-border { border-color: #ff9100; }
-.hub-tile.ai .hub-border { border-color: #536dfe; }
-
-.hub-tile:hover .hub-border {
-  inset: 12px;
-  opacity: 1;
-  transform: rotate(0);
-}
+/* ──────── RAMKA ANIMOWANA (WYŁĄCZONA) ──────── */
 
 /* ──────── TEKST NA DOLE (wjeżdża na hover) ──────── */
 .bottom-text {
@@ -357,6 +338,23 @@ function navigate(name) {
   flex-direction: column;
   gap: 4px;
   margin: 4px 0;
+  max-height: 170px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.module-list::-webkit-scrollbar {
+  width: 4px;
+}
+.module-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.module-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+}
+.module-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .module-row {
