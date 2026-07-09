@@ -45,7 +45,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.10.0"
+APP_VERSION = "v0.12.0"
 
 # ===========================================================================
 # JWT Config
@@ -365,11 +365,11 @@ def health():
 
 
 # ===========================================================================
-# API routes — APEX (mock)
+# API routes — Business Hub (mock)
 # ===========================================================================
 
 
-def _apex_kpi():
+def _business_kpi():
     return {
         "uptime": round(98 + random.random() * 1.9, 1),
         "uptime_trend": random.choice(["up", "down"]),
@@ -387,12 +387,12 @@ def _apex_kpi():
     }
 
 
-def _apex_trends():
+def _business_trends():
     months = ["Sty", "Lut", "Mar", "Kwi", "Maj", "Cze", "Lip"]
     return [{"month": m, "transactions": random.randint(800, 3500), "errors": random.randint(5, 50)} for m in months]
 
 
-def _apex_reports():
+def _business_reports():
     statuses = ["ready", "ready", "ready", "generating"]
     names = [
         "Raport_dzienny_KPI", "SLA_Compliance_Q2", "ETL_Performance_Weekly",
@@ -413,7 +413,7 @@ def _apex_reports():
     ]
 
 
-def _apex_etl():
+def _business_etl():
     workflows = ["LOAD_CUSTOMER", "LOAD_TRANSACTIONS", "SYNC_ACCOUNTS", "CALC_INTEREST", "GEN_REPORT", "AGG_DAILY_KPI"]
     return [
         {
@@ -427,7 +427,7 @@ def _apex_etl():
     ]
 
 
-def _apex_sla():
+def _business_sla():
     services = ["ETL Pipeline", "API Gateway", "Database OLTP", "Reporting DB", "Authentication"]
     return [
         {
@@ -441,7 +441,7 @@ def _apex_sla():
     ]
 
 
-def _apex_alerts():
+def _business_alerts():
     levels = ["critical", "warning", "info"]
     sources = ["PowerCenter", "TeamCity", "Oracle", "Snowflake", "App Server"]
     messages = [
@@ -461,34 +461,82 @@ def _apex_alerts():
     ]
 
 
+def _serve_business_data(kind: str):
+    """Zwraca dane dla Business Hub — używane przez stare i nowe endpointy."""
+    m = {
+        "kpi": _business_kpi,
+        "trends": _business_trends,
+        "reports": _business_reports,
+        "etl": _business_etl,
+        "sla": _business_sla,
+        "alerts": _business_alerts,
+    }
+    fn = m.get(kind)
+    if not fn:
+        raise HTTPException(status_code=404)
+    return {"success": True, "data": fn()}
+
+
+# Nowe endpointy: /api/business/*
+@app.get("/api/business/kpi")
+def business_kpi():
+    return _serve_business_data("kpi")
+
+
+@app.get("/api/business/trends")
+def business_trends():
+    return _serve_business_data("trends")
+
+
+@app.get("/api/business/reports")
+def business_reports():
+    return _serve_business_data("reports")
+
+
+@app.get("/api/business/etl")
+def business_etl():
+    return _serve_business_data("etl")
+
+
+@app.get("/api/business/sla")
+def business_sla():
+    return _serve_business_data("sla")
+
+
+@app.get("/api/business/alerts")
+def business_alerts():
+    return _serve_business_data("alerts")
+
+
+# Stare endpointy /api/apex/* — kompatybilność wsteczna (do czasu rebuildu Vue)
 @app.get("/api/apex/kpi")
-def apex_kpi():
-    return {"success": True, "data": _apex_kpi()}
+def apex_kpi_compat():
+    return _serve_business_data("kpi")
 
 
 @app.get("/api/apex/trends")
-def apex_trends():
-    return {"success": True, "data": _apex_trends()}
+def apex_trends_compat():
+    return _serve_business_data("trends")
 
 
 @app.get("/api/apex/reports")
-def apex_reports():
-    return {"success": True, "data": _apex_reports()}
+def apex_reports_compat():
+    return _serve_business_data("reports")
 
 
 @app.get("/api/apex/etl")
-def apex_etl():
-    return {"success": True, "data": _apex_etl()}
+def apex_etl_compat():
+    return _serve_business_data("etl")
 
 
 @app.get("/api/apex/sla")
-def apex_sla():
-    return {"success": True, "data": _apex_sla()}
+def apex_sla_compat():
+    return _serve_business_data("sla")
 
 
 @app.get("/api/apex/alerts")
-def apex_alerts():
-    return {"success": True, "data": _apex_alerts()}
+def apex_alerts_compat():
+    return _serve_business_data("alerts")
 
 
 # ===========================================================================

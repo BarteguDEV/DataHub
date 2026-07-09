@@ -58,7 +58,16 @@
       <!-- Status backendu + wersja -->
       <div class="header-chip backend-indicator" :class="{ online: backendOnline }">
         <span class="chip-dot"></span>
-        <span class="chip-label">API</span>
+        <span class="chip-label">FastAPI</span>
+      </div>
+      <div
+        v-if="streamlitOnline !== null"
+        class="header-chip streamlit-indicator"
+        :class="{ online: streamlitOnline }"
+        title="Status Streamlit"
+      >
+        <span class="chip-dot"></span>
+        <span class="chip-label">Streamlit</span>
       </div>
       <div class="header-chip version-chip">
         <span class="chip-label">{{ appVersion }}</span>
@@ -114,6 +123,12 @@
             </div>
           </div>
           <div class="dropdown-divider"></div>
+          <button class="dropdown-item about-item" @click.stop="showAbout = true; showMenu = false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            About me
+          </button>
           <button class="dropdown-item" @click.stop="handleLogout">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -124,6 +139,57 @@
         </div>
       </div>
     </div>
+
+    <!-- === ABOUT ME MODAL === -->
+    <Teleport to="body">
+      <transition name="modal">
+        <div v-if="showAbout" class="about-overlay" @click.self="showAbout = false">
+          <div class="about-card">
+            <!-- Avatar banner -->
+            <div class="about-banner">
+              <div class="about-avatar-wrapper">
+                <span class="about-avatar-text">{{ user.initials }}</span>
+              </div>
+              <div class="about-banner-label">
+                <svg class="about-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span>{{ user.username }}</span>
+              </div>
+            </div>
+
+            <div class="about-body">
+              <h2 class="about-name">{{ user.username }}</h2>
+              <p class="about-role">{{ user.role }}</p>
+              <p class="about-desc">DataHub — portal integracyjny. Odpowiedzialny za migrację systemów i rozwój narzędzi wewnętrznych.</p>
+
+              <div class="about-info">
+                <div class="about-info-row">
+                  <svg class="about-info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                  </svg>
+                  <span>DataHub Portal</span>
+                </div>
+                <div class="about-info-row">
+                  <svg class="about-info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/><circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <span>Bartegu</span>
+                </div>
+                <div class="about-info-row">
+                  <svg class="about-info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                  <span>{{ user.username }}@datahub.local</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="about-close-btn" @click="showAbout = false">Zamknij</button>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
   </header>
 </template>
 
@@ -143,10 +209,26 @@ const { contentWidth, setWidth } = useContentWidth()
 const showMenu = ref(false)
 const showHubMenu = ref(false)
 const backendOnline = ref(false)
+const showAbout = ref(false)
+
+// Streamlit status — emitowany z DdtHubView przez zdarzenie lub prosty fetch
+const streamlitOnline = ref(null)
+
+onMounted(async () => {
+  // Sprawdź czy Streamlit live
+  try {
+    const ctrl = new AbortController()
+    setTimeout(() => ctrl.abort(), 3000)
+    const res = await fetch('/streamlit/', { signal: ctrl.signal })
+    streamlitOnline.value = res.ok || res.status === 200
+  } catch {
+    streamlitOnline.value = false
+  }
+})
 
 const hubs = [
   { name: 'DdtHub', label: 'Developers Hub', color: '#00c853', badge: 'Streamlit' },
-  { name: 'ApexHub', label: 'Business Hub', color: '#ff9100', badge: 'KPI' },
+  { name: 'BusinessHub', label: 'Business Hub', color: '#ff9100', badge: 'KPI' },
   { name: 'AiHub', label: 'AI Hub', color: '#536dfe', badge: 'New' },
 ]
 
@@ -157,7 +239,7 @@ const showBack = computed(() => {
 const hubName = computed(() => {
   const names = {
     DdtHub: 'Developers Hub',
-    ApexHub: 'Business Hub',
+    BusinessHub: 'Business Hub',
     AiHub: 'AI Hub',
   }
   return names[route.name] || null
@@ -292,6 +374,12 @@ function closeDropdown(e) {
 
 .backend-indicator.online .chip-dot {
   background: #00c853;
+}
+.streamlit-indicator .chip-dot {
+  background: #ff5252;
+}
+.streamlit-indicator.online .chip-dot {
+  background: #00e5ff;
 }
 
 .version-chip {
@@ -605,5 +693,164 @@ function closeDropdown(e) {
   min-width: 28px;
   text-align: right;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ────────── About item w dropdownie ────────── */
+.about-item {
+  transition: all 0.15s;
+}
+.about-item:hover {
+  background: var(--bg-hover);
+  color: var(--accent-primary) !important;
+}
+
+/* ────────── ABOUT ME MODAL ────────── */
+.about-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.about-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.about-banner {
+  height: 120px;
+  background: linear-gradient(135deg, rgba(0,200,83,0.15), rgba(0,229,255,0.1));
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px 20px;
+}
+
+.about-avatar-wrapper {
+  position: absolute;
+  bottom: -32px;
+  left: 20px;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--bg-card);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.about-avatar-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000;
+}
+
+.about-banner-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 0;
+}
+.about-icon {
+  color: var(--accent-primary);
+}
+
+.about-body {
+  padding: 48px 20px 20px;
+}
+
+.about-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.about-role {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-primary);
+  margin: 4px 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.about-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+}
+
+.about-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.about-info-row:last-child { border: none; }
+
+.about-info-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.about-close-btn {
+  width: calc(100% - 40px);
+  margin: 0 20px 16px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.about-close-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* Modal transitions */
+.modal-enter-active { transition: opacity 0.2s ease; }
+.modal-leave-active { transition: opacity 0.15s ease; }
+.modal-enter-from,
+.modal-leave-to { opacity: 0; }
+.modal-enter-active .about-card { animation: modalIn 0.25s ease; }
+.modal-leave-active .about-card { animation: modalOut 0.15s ease; }
+@keyframes modalIn {
+  from { transform: scale(0.95) translateY(10px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+@keyframes modalOut {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0.95); opacity: 0; }
 }
 </style>

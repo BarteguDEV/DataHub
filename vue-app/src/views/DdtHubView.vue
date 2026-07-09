@@ -5,93 +5,21 @@
       <h1 class="section-title">Developers Hub</h1>
       <p class="section-desc">
         Aplikacja Streamlit z modułami Jira, Confluence, IAM, TeamCity i Informatica.
-        Wybierz tryb podglądu poniżej.
       </p>
     </div>
 
-    <!-- Przyciski trybu -->
-    <div class="mode-toggle">
-      <button
-        class="mode-btn"
-        :class="{ active: mode === 'embed' }"
-        @click="mode = 'embed'"
-        :disabled="loading"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-        </svg>
-        Osadzony (iframe)
-      </button>
-      <button
-        class="mode-btn"
-        :class="{ active: mode === 'launch' }"
-        @click="mode = 'launch'"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-        </svg>
-        Karta uruchamiania
-      </button>
-    </div>
-
-    <!-- TRYB: Osadzony iframe -->
-    <template v-if="mode === 'embed'">
-      <!-- Status bar -->
-      <div class="embed-status">
-        <span class="status-dot" :class="statusClass"></span>
-        <span>{{ statusText }}</span>
-        <button
-          v-if="iframeError"
-          class="btn-retry"
-          @click="reloadIframe"
-        >
-          {{ isExternal ? 'Resetuj do lokalnego' : 'Spróbuj zewnętrznego' }}
-        </button>
-        <a
-          :href="streamlitSource"
-          target="_blank"
-          class="btn-external"
-          title="Otwórz w nowej karcie"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-        </a>
-      </div>
-
-      <!-- Loader -->
-      <div v-if="loading" class="embed-loader">
-        <div class="loader-spinner"></div>
-        <span>Ładowanie Streamlit…</span>
-      </div>
-
-      <!-- Iframe -->
-      <div class="embed-container" :class="{ hidden: loading }">
-        <iframe
-          ref="iframeRef"
-          :src="streamlitSource"
-          class="streamlit-iframe"
-          frameborder="0"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          @load="onIframeLoad"
-          @error="onIframeError"
-        ></iframe>
-      </div>
-    </template>
-
-    <!-- TRYB: Karta uruchamiania (dotychczasowy widok) -->
-    <template v-if="mode === 'launch'">
+    <!-- Jeśli Streamlit offline — pokaż launch card od razu -->
+    <template v-if="!streamlitReachable">
       <div class="streamlit-launch">
         <div class="launch-card">
           <div class="launch-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00c853" stroke-width="1.5">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="1.5">
               <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
             </svg>
           </div>
           <h2>Developers Hub — Streamlit</h2>
           <p>Pełna aplikacja Developers Hub dostępna jako osobna aplikacja Streamlit.<br>
-          Zawiera: Jira, Confluence, IAM, TeamCity, Informatica.<br>
-          Dane wyświetlane przez <code>st.write()</code>, <code>st.dataframe()</code>, <code>st.plotly_chart()</code>.</p>
+          Zawiera: Jira, Confluence, IAM, TeamCity, Informatica.</p>
 
           <div class="launch-actions">
             <button class="btn-launch" @click="openStreamlit">
@@ -128,54 +56,109 @@
       </div>
     </template>
 
+    <!-- Streamlit online — iframe główny + zwijana karta -->
+    <template v-else>
+      <!-- Iframe -->
+      <div class="embed-container">
+        <div v-if="loading" class="embed-loader">
+          <div class="loader-spinner"></div>
+          <span>Ładowanie Streamlit…</span>
+        </div>
+        <iframe
+          ref="iframeRef"
+          :src="streamlitSource"
+          class="streamlit-iframe"
+          :class="{ hidden: loading }"
+          frameborder="0"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          @load="onIframeLoad"
+          @error="onIframeError"
+        ></iframe>
+      </div>
+
+      <!-- Zwijana karta uruchamiania -->
+      <div class="collapse-card" :class="{ open: showLaunchCard }">
+        <button class="collapse-trigger" @click="showLaunchCard = !showLaunchCard">
+          <span class="collapse-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Karta uruchamiania
+          </span>
+          <span class="collapse-badge">{{ modules.length }} modułów</span>
+          <svg
+            class="collapse-chevron"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            :class="{ rotated: showLaunchCard }"
+          >
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        <div class="collapse-body">
+          <div class="launch-card compact">
+            <div class="launch-actions">
+              <button class="btn-launch" @click="openStreamlit">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                Otwórz w nowej karcie
+              </button>
+            </div>
+            <div class="module-list inline">
+              <div class="mini-card" v-for="mod in modules" :key="mod.name">
+                <div class="mini-icon" v-html="mod.icon"></div>
+                <div>
+                  <div class="mini-name">{{ mod.name }}</div>
+                  <div class="mini-desc">{{ mod.desc }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Retry bar (jeśli iframe padł) -->
+      <div v-if="iframeError" class="embed-status error-bar">
+        <span class="status-dot error"></span>
+        <span>Streamlit nie odpowiada — spróbuj odświeżyć</span>
+        <button class="btn-retry" @click="reloadIframe">Odśwież</button>
+      </div>
+    </template>
+
     <!-- Stopka -->
     <div class="embed-footer">
-      <span class="footer-ver">DataHub Streamlit | v0.5.0</span>
+      <span class="footer-ver">DataHub Streamlit | v0.11.0</span>
       <span class="footer-hint">{{ streamlitSource }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
-// ---- Konfiguracja ----
-// Jeśli Streamlit proxy nie działa, ustaw zewnętrzny URL (np. Streamlit Community Cloud)
 const STREAMLIT_LOCAL = '/streamlit/'
 const STREAMLIT_EXTERNAL = import.meta.env.VITE_STREAMLIT_URL || ''
 
-// ---- Stan ----
-const mode = ref('embed')           // 'embed' | 'launch'
 const loading = ref(true)
 const iframeError = ref(false)
 const useExternal = ref(false)
 const isAlive = ref(false)
 const lastCheck = ref(false)
 const iframeRef = ref(null)
+const showLaunchCard = ref(false)
+const streamlitReachable = ref(true)
 
 const streamlitSource = computed(() =>
   useExternal.value && STREAMLIT_EXTERNAL
     ? STREAMLIT_EXTERNAL
     : STREAMLIT_LOCAL
 )
-
-const isExternal = computed(() =>
-  useExternal.value && !!STREAMLIT_EXTERNAL
-)
-
-const statusClass = computed(() => {
-  if (loading.value) return 'loading'
-  if (iframeError.value) return 'error'
-  return 'online'
-})
-
-const statusText = computed(() => {
-  if (loading.value) return 'Ładowanie Streamlit…'
-  if (iframeError.value) return 'Streamlit nie odpowiada — sprawdź czy serwer działa'
-  return `Streamlit online${useExternal.value ? ' (zewnętrzny)' : ' (lokalny proxy)'}`
-})
-
-// ---- Metody ----
 
 function openStreamlit() {
   window.open('/streamlit/', '_blank')
@@ -197,10 +180,8 @@ function reloadIframe() {
   } else if (STREAMLIT_EXTERNAL) {
     useExternal.value = true
   }
-  // Wymuszenie przeładowania iframe przez zmianę klucza
   loading.value = true
   iframeError.value = false
-  // Force re-render iframe
   const iframe = iframeRef.value
   if (iframe) {
     iframe.src = streamlitSource.value
@@ -220,9 +201,9 @@ async function checkStreamlit() {
   lastCheck.value = true
 }
 
-// Auto-check on mount (dla trybu launch)
-onMounted(() => {
-  checkStreamlit()
+onMounted(async () => {
+  await checkStreamlit()
+  streamlitReachable.value = isAlive.value
 })
 
 const modules = [
@@ -248,45 +229,118 @@ const modules = [
 .section-title { font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0; }
 .section-desc { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; max-width: 600px; }
 
-/* Mode toggle */
-.mode-toggle {
-  display: flex;
-  gap: 8px;
+/* ──── Iframe ──── */
+.embed-container {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-primary);
 }
 
-.mode-btn {
+.streamlit-iframe {
+  width: 100%;
+  height: 72vh;
+  min-height: 500px;
+  display: block;
+  background: #fff;
+}
+.streamlit-iframe.hidden { display: none; }
+
+.embed-loader {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 10px;
+  justify-content: center;
+  gap: 16px;
+  padding: 80px 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.loader-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-color);
+  border-top-color: #00c853;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ──── Zwijana karta ──── */
+.collapse-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.collapse-card:hover { border-color: rgba(255,255,255,0.12); }
+
+.collapse-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  background: none;
+  border: none;
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
   font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
-
-.mode-btn:hover {
-  border-color: var(--accent-primary);
+.collapse-trigger:hover {
+  background: var(--bg-hover);
   color: var(--text-primary);
 }
 
-.mode-btn.active {
-  background: rgba(0, 200, 83, 0.08);
-  border-color: #00c853;
-  color: #00c853;
+.collapse-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-primary);
+  font-weight: 600;
 }
 
-.mode-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.collapse-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  margin-left: auto;
 }
 
-/* Embed status bar */
+.collapse-chevron {
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+  color: var(--text-muted);
+}
+.collapse-chevron.rotated { transform: rotate(180deg); }
+
+.collapse-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.collapse-card.open .collapse-body {
+  max-height: 600px;
+  border-top: 1px solid var(--border-color);
+}
+
+.collapse-body .launch-card.compact {
+  background: none;
+  border: none;
+  padding: 16px 18px;
+}
+
+/* ──── Status error ──── */
 .embed-status {
   display: flex;
   align-items: center;
@@ -298,33 +352,13 @@ const modules = [
   font-size: 13px;
   color: var(--text-secondary);
 }
-
 .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ff5252;
   flex-shrink: 0;
 }
-
-.status-dot.online {
-  background: #00c853;
-}
-
-.status-dot.loading {
-  background: #ff9100;
-  animation: pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
-.status-dot.error {
-  background: #ff5252;
-}
-
+.status-dot.error { background: #ff5252; }
 .btn-retry {
   margin-left: auto;
   padding: 6px 14px;
@@ -337,94 +371,12 @@ const modules = [
   font-family: 'Inter', sans-serif;
   transition: all 0.15s;
 }
-
 .btn-retry:hover {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
 }
 
-.btn-external {
-  display: flex;
-  align-items: center;
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-card);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s;
-  text-decoration: none;
-}
-
-.btn-external:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-}
-
-/* Loader */
-.embed-loader {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 80px 0;
-  color: var(--text-muted);
-  font-size: 14px;
-}
-
-.loader-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--border-color);
-  border-top-color: #00c853;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Iframe container */
-.embed-container {
-  flex: 1;
-  min-height: 0;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--bg-primary);
-}
-
-.embed-container.hidden {
-  display: none;
-}
-
-.streamlit-iframe {
-  width: 100%;
-  height: 70vh;
-  min-height: 500px;
-  display: block;
-  background: #fff;
-}
-
-/* Footer */
-.embed-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.footer-hint {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  opacity: 0.6;
-}
-
-/* ============ TRYB LAUNCH (dotychczasowy widok) ============ */
+/* ──── LAUNCH CARD (offline / zwijana) ──── */
 .streamlit-launch {
   display: flex;
   flex-direction: column;
@@ -437,32 +389,18 @@ const modules = [
   border-radius: 16px;
   padding: 32px;
 }
-
-.launch-icon {
-  margin-bottom: 16px;
-}
-
+.launch-icon { margin-bottom: 16px; }
 .launch-card h2 {
   font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0 0 12px 0;
 }
-
 .launch-card p {
   font-size: 14px;
   line-height: 1.7;
   color: var(--text-secondary);
   margin: 0 0 20px 0;
-}
-
-.launch-card code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  background: var(--bg-hover);
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: #00c853;
 }
 
 .launch-actions {
@@ -475,11 +413,11 @@ const modules = [
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 28px;
+  padding: 12px 24px;
   border-radius: 10px;
   background: linear-gradient(135deg, #00c853, #00e676);
   color: #000;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s;
@@ -487,7 +425,6 @@ const modules = [
   cursor: pointer;
   font-family: 'Inter', sans-serif;
 }
-
 .btn-launch:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 200, 83, 0.3);
@@ -497,7 +434,7 @@ const modules = [
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
+  padding: 10px 18px;
   border-radius: 10px;
   background: var(--bg-hover);
   border: 1px solid var(--border-color);
@@ -508,27 +445,21 @@ const modules = [
   transition: all 0.15s;
   font-family: 'Inter', sans-serif;
 }
-
 .btn-check:hover {
   border-color: var(--accent-primary);
   color: var(--text-primary);
 }
-
 .btn-check.alive {
   border-color: #00c853;
   color: #00c853;
 }
-
 .check-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--text-muted);
 }
-
-.btn-check.alive .check-dot {
-  background: #00c853;
-}
+.btn-check.alive .check-dot { background: #00c853; }
 
 .check-result {
   margin-top: 12px;
@@ -539,7 +470,6 @@ const modules = [
   border: 1px solid rgba(0, 200, 83, 0.15);
   border-radius: 8px;
 }
-
 .check-result.error {
   color: #ff5252;
   background: rgba(255, 82, 82, 0.05);
@@ -552,31 +482,35 @@ const modules = [
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 12px;
 }
+.module-list.inline {
+  margin-top: 16px;
+}
 
 .mini-card {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 16px;
-  background: var(--bg-card);
+  background: var(--bg-hover);
   border: 1px solid var(--border-color);
   border-radius: 10px;
 }
+.mini-icon { flex-shrink: 0; display: flex; }
+.mini-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.mini-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
-.mini-icon {
-  flex-shrink: 0;
+/* Footer */
+.embed-footer {
   display: flex;
-}
-
-.mini-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.mini-desc {
-  font-size: 12px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 11px;
   color: var(--text-muted);
-  margin-top: 2px;
+}
+.footer-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  opacity: 0.6;
 }
 </style>

@@ -93,25 +93,37 @@
         </div>
       </div>
 
-      <!-- Dekoracyjne statystyki — Magic Card effect -->
+      <!-- Statystyki -->
       <div class="login-stats">
         <div class="stat-item">
-          <div class="stat-item-inner">
-            <span class="stat-num">3</span>
-            <span class="stat-label">Huby</span>
-          </div>
+          <span class="stat-num">3</span>
+          <span class="stat-label">Huby</span>
         </div>
         <div class="stat-item">
-          <div class="stat-item-inner">
-            <span class="stat-num">12+</span>
-            <span class="stat-label">Moduły</span>
-          </div>
+          <span class="stat-num">12+</span>
+          <span class="stat-label">Moduły</span>
         </div>
         <div class="stat-item">
-          <div class="stat-item-inner">
-            <span class="stat-num">6</span>
-            <span class="stat-label">Integracje</span>
-          </div>
+          <span class="stat-num">6</span>
+          <span class="stat-label">Integracje</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">8</span>
+          <span class="stat-label">Systemy</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- === Loading rotator — dolny prawy róg === -->
+    <div class="lr-card">
+      <div class="lr-loader">
+        <p>loading</p>
+        <div class="lr-words">
+          <span class="lr-word">huby</span>
+          <span class="lr-word">raporty</span>
+          <span class="lr-word">dane</span>
+          <span class="lr-word">integracje</span>
+          <span class="lr-word">huby</span>
         </div>
       </div>
     </div>
@@ -530,87 +542,111 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 }
 
 /* ====================================
-   STATYSTYKI — MAGIC CARD EFFECT
+   LOADING ROTATOR — dolny prawy róg
+   ==================================== */
+.lr-card {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 100;
+  background: var(--bg-card, #16181f);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 1rem;
+  padding: 0.6rem 1.2rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.lr-card:hover { opacity: 1; }
+
+.lr-loader {
+  color: var(--text-muted, rgba(232,234,237,0.4));
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  box-sizing: content-box;
+  height: 22px;
+  padding: 6px 8px;
+  display: flex;
+  border-radius: 8px;
+}
+
+.lr-loader p {
+  margin: 0;
+  line-height: 22px;
+}
+
+.lr-words {
+  overflow: hidden;
+  position: relative;
+  height: 22px;
+  margin-left: 6px;
+}
+.lr-words::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    var(--bg-card, #16181f) 10%,
+    transparent 30%,
+    transparent 70%,
+    var(--bg-card, #16181f) 90%
+  );
+  z-index: 20;
+  pointer-events: none;
+}
+
+.lr-word {
+  display: block;
+  height: 22px;
+  line-height: 22px;
+  padding-left: 4px;
+  color: #00c853;
+  animation: lr-spin 4s infinite;
+}
+
+@keyframes lr-spin {
+  10%  { transform: translateY(-102%); }
+  25%  { transform: translateY(-100%); }
+  35%  { transform: translateY(-202%); }
+  50%  { transform: translateY(-200%); }
+  60%  { transform: translateY(-302%); }
+  75%  { transform: translateY(-300%); }
+  85%  { transform: translateY(-402%); }
+  100% { transform: translateY(-400%); }
+}
+
+/* ====================================
+   STATYSTYKI — flat cards
    ==================================== */
 .login-stats {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
-/* Kafel z gradientową ramką */
+/* Kafel z cienkim borderem */
 .stat-item {
-  --gradient: linear-gradient(135deg, #00c853, #00e5ff);
-  background: var(--gradient);
-  padding: 2px;
+  background: rgba(22, 24, 31, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
-  position: relative;
-  z-index: 1;
-  overflow: visible;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-/* Poświata (glow) za kaflem */
-.stat-item::after {
-  position: absolute;
-  content: '';
-  top: 30px;
-  left: 0;
-  right: 0;
-  z-index: -1;
-  height: 100%;
-  width: 100%;
-  transform: scale(0.8);
-  filter: blur(25px);
-  background: var(--gradient);
-  transition: opacity 0.5s;
-}
-
-/* Wewnętrzna karta — ciemne tło zachowujące obecną estetykę */
-.stat-item-inner {
-  background: rgba(7, 9, 14, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 12px;
-  padding: 20px 28px;
+  padding: 18px 28px;
   text-align: center;
-}
-
-/* Hover: glow znika, kafel delikatnie unosi się w górę */
-.stat-item:hover::after {
-  opacity: 0;
-}
-
-.stat-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0, 200, 83, 0.25);
-}
-
-/* Hover: tekst przechodzi w gradient */
-.stat-item:hover .stat-num,
-.stat-item:hover .stat-label {
-  color: transparent;
-  background: var(--gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
 }
 
 .stat-num {
   display: block;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 700;
   color: #00c853;
   line-height: 1;
-  transition: all 0.5s;
 }
 
 .stat-label {
-  font-size: 12px;
-  color: rgba(232, 234, 237, 0.4);
+  font-size: 11px;
+  color: rgba(232, 234, 237, 0.45);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-top: 6px;
+  margin-top: 4px;
   display: block;
-  transition: all 0.5s;
 }
 </style>

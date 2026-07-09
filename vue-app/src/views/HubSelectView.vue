@@ -123,9 +123,9 @@ const hubs = [
     ],
   },
   {
-    name: 'APEX',
-    cls: 'apex',
-    route: 'ApexHub',
+    name: 'BUSINESS',
+    cls: 'business',
+    route: 'BusinessHub',
     title: 'Business Hub',
     bottomText: 'BUSINESS HUB',
     desc: 'Dashboardy KPI, raporty codzienne, statystyki systemowe i helicopter view na całą organizację. Dane z Oracle i Snowflake.',
@@ -263,7 +263,7 @@ function navigate(name) {
 }
 
 .hub-tile.ddt .tile-accent { background: linear-gradient(90deg, #00c853, #00e5ff); }
-.hub-tile.apex .tile-accent { background: linear-gradient(90deg, #ff9100, #ff3d00); }
+.hub-tile.business .tile-accent { background: linear-gradient(90deg, #ff9100, #ff3d00); }
 .hub-tile.ai .tile-accent { background: linear-gradient(90deg, #536dfe, #d500f9); }
 
 /* ──────── RAMKA ANIMOWANA (inspirowana efectem z kafelka UI) ──────── */
@@ -279,7 +279,7 @@ function navigate(name) {
 }
 
 .hub-tile.ddt .hub-border { border-color: #00c853; }
-.hub-tile.apex .hub-border { border-color: #ff9100; }
+.hub-tile.business .hub-border { border-color: #ff9100; }
 .hub-tile.ai .hub-border { border-color: #536dfe; }
 
 .hub-tile:hover .hub-border {
@@ -305,7 +305,7 @@ function navigate(name) {
 }
 
 .hub-tile.ddt .bottom-text { color: #00c853; }
-.hub-tile.apex .bottom-text { color: #ff9100; }
+.hub-tile.business .bottom-text { color: #ff9100; }
 .hub-tile.ai .bottom-text { color: #536dfe; }
 
 .hub-tile:hover .bottom-text {
@@ -334,7 +334,7 @@ function navigate(name) {
 }
 
 .hub-tile.ddt .tile-icon { color: #00c853; }
-.hub-tile.apex .tile-icon { color: #ff9100; }
+.hub-tile.business .tile-icon { color: #ff9100; }
 .hub-tile.ai .tile-icon { color: #536dfe; }
 
 .tile-title {

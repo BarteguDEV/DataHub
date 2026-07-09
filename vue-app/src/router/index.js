@@ -21,10 +21,10 @@ const routes = [
     meta: { title: 'Developers Hub', requiresAuth: true, hub: 'ddt' },
   },
   {
-    path: '/apex',
-    name: 'ApexHub',
-    component: () => import('@/views/ApexHubView.vue'),
-    meta: { title: 'Business Hub', requiresAuth: true, hub: 'apex' },
+    path: '/business',
+    name: 'BusinessHub',
+    component: () => import('@/views/BusinessHubView.vue'),
+    meta: { title: 'Business Hub', requiresAuth: true, hub: 'business' },
   },
   {
     path: '/ai',
