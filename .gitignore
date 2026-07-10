@@ -22,6 +22,8 @@ deployment/
 # Coverage reports (regenerowane lokalnie)
 coverage.json
 static/test-coverage.json
+# Ale wersja wygenerowana przez CI ma być commitowana
+!static/test-coverage.json
 
 # AI reports (regenerowane przez generate_ai_reports.py)
 ai-reports/
