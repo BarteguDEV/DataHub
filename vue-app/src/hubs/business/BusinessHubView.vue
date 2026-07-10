@@ -37,6 +37,7 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
+import { getToken } from '../../api.js'
 import KpiBar from './KpiBar.vue'
 import MessageBar from './MessageBar.vue'
 import DonutChart from './DonutChart.vue'
@@ -121,10 +122,12 @@ function openEtlModal(e) {
 
 async function fetchAll() {
   const endpoints = { kpi: '/api/business/kpi', etl: '/api/business/etl', sla: '/api/business/sla', alerts: '/api/business/alerts' }
+  const token = getToken()
+  const headers = token ? { Authorization: `Bearer ${token}` } : {}
   let anyOk = false
   for (const [key, url] of Object.entries(endpoints)) {
     try {
-      const res = await fetch(url)
+      const res = await fetch(url, { headers })
       const json = await res.json()
       if (json.success) {
         anyOk = true
