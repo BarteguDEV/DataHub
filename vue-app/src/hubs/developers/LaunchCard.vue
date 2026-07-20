@@ -6,8 +6,8 @@
           <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
         </svg>
       </div>
-      <h2>Developers Hub — Streamlit</h2>
-      <p>Pełna aplikacja Developers Hub dostępna jako osobna aplikacja Streamlit.<br>
+      <h2>Developerzy — Streamlit</h2>
+      <p>Pełna aplikacja Developerzy dostępna jako osobna aplikacja Streamlit.<br>
       Zawiera: Jira, Confluence, IAM, TeamCity, Informatica.</p>
 
       <div class="launch-actions">

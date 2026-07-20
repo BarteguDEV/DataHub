@@ -357,9 +357,9 @@ onMounted(async () => {
 })
 
 const hubs = [
-  { name: 'DdtHub', label: 'Developers Hub', color: '#00c853', badge: 'Streamlit' },
-  { name: 'BusinessHub', label: 'Business Hub', color: '#ff9100', badge: 'KPI' },
-  { name: 'AiHub', label: 'AI Hub', color: '#536dfe', badge: 'New' },
+  { name: 'DdtHub', label: 'Developerzy', color: '#00c853', badge: 'Streamlit' },
+  { name: 'BusinessHub', label: 'Biznes', color: '#ff9100', badge: 'KPI' },
+  { name: 'AiHub', label: 'AI', color: '#536dfe', badge: 'New' },
 ]
 
 const showBack = computed(() => {
@@ -368,9 +368,9 @@ const showBack = computed(() => {
 
 const hubName = computed(() => {
   const names = {
-    DdtHub: 'Developers Hub',
-    BusinessHub: 'Business Hub',
-    AiHub: 'AI Hub',
+    DdtHub: 'Developerzy',
+    BusinessHub: 'Biznes',
+    AiHub: 'AI',
   }
   return names[route.name] || null
 })

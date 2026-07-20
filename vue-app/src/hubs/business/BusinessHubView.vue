@@ -1,7 +1,7 @@
 <template>
   <div class="hub-view">
     <div class="hub-section-header">
-      <h1 class="section-title">Business Hub</h1>
+      <h1 class="section-title">Biznes</h1>
       <p class="section-desc">
         Centrum monitoringu procesów biznesowych. Statusy komunikatów,
         wydajność ETL, SLA i alerty w czasie rzeczywistym.
@@ -10,16 +10,21 @@
 
     <KpiBar :kpis="kpis" @open="openKpiModal" />
 
-    <MessageBar
-      :messages="messages"
-      :total="totalMsgs"
-      @open="openMsgModal"
-    />
-
     <div class="two-col">
-      <DonutChart :segments="donutSegments" :successRate="successRate" />
-      <ActivityList :items="activity" @open="openActivityModal" />
+      <!-- Lewa kolumna: komunikaty + rozkład -->
+      <div class="left-messages">
+        <MessageBar
+          :messages="messages"
+          :total="totalMsgs"
+          @open="openMsgModal"
+        />
+        <DonutChart :segments="donutSegments" :successRate="successRate" />
+      </div>
+      <!-- Prawa kolumna: Significant Issue -->
+      <SignificantIssue :items="significantIssueData" />
     </div>
+
+    <ActivityList :items="activity" @open="openActivityModal" />
 
     <EtlTable :items="etl" @open="openEtlModal" />
 
@@ -29,7 +34,7 @@
 
     <div class="api-status">
       <span class="api-dot" :class="{ online: apiOk }"></span>
-      <span>{{ apiOk ? 'API Business Hub online' : 'API niedostępne' }}</span>
+      <span>{{ apiOk ? 'API Biznes online' : 'API niedostępne' }}</span>
       <button v-if="!apiOk" class="btn-retry" @click="fetchAll">Ponów</button>
     </div>
   </div>
@@ -44,6 +49,7 @@ import DonutChart from './DonutChart.vue'
 import ActivityList from './ActivityList.vue'
 import EtlTable from './EtlTable.vue'
 import SlaTable from './SlaTable.vue'
+import SignificantIssue from './SignificantIssue.vue'
 import ModalTeleport from './ModalTeleport.vue'
 
 const API_BASE = window.location.origin
@@ -55,6 +61,12 @@ const alerts = ref([])
 const activity = ref([])
 const messages = ref([])
 const modal = reactive({ show: false, title: '', body: '' })
+
+const significantIssueData = ref([
+  { id: 'MARU', name: 'Zabezpieczenia', backlog: 1247, color: '#ff5252', trend: 'up', change: '12%', pct: 48 },
+  { id: 'VALU', name: 'Wyceny', backlog: 863, color: '#ff9100', trend: 'down', change: '5%', pct: 33 },
+  { id: 'NEWT', name: 'Nowe transakcje', backlog: 491, color: '#536dfe', trend: 'up', change: '8%', pct: 19 },
+])
 
 function closeModal() { modal.show = false }
 
@@ -159,7 +171,8 @@ onMounted(fetchAll)
 .section-title { font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0; }
 .section-desc { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; max-width: 600px; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-@media (max-width:800px){ .two-col { grid-template-columns: 1fr; } }
+@media (max-width:1000px){ .two-col { grid-template-columns: 1fr; } }
+.left-messages { display: flex; flex-direction: column; gap: 20px; }
 .api-status { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; font-size: 13px; color: var(--text-muted); margin-top: 8px; }
 .api-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff5252; }
 .api-dot.online { background: #00c853; box-shadow: 0 0 8px rgba(0,200,83,0.4); animation: pulse 2s ease infinite; }

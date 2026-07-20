@@ -1,7 +1,7 @@
 <template>
   <div class="hub-view">
     <div class="hub-section-header">
-      <h1 class="section-title">Developers Hub</h1>
+      <h1 class="section-title">Developerzy</h1>
       <p class="section-desc">
         Aplikacja Streamlit z modułami Jira, Confluence, IAM, TeamCity i Informatica.
       </p>

@@ -3,7 +3,7 @@
     <!-- ====== HEADER ====== -->
     <div class="planning-header">
       <div class="header-left">
-        <h1 class="section-title">Planning Hub</h1>
+        <h1 class="section-title">Planowanie</h1>
         <p class="section-desc">Zapisuj tematy ze spotkań i układaj priorytety</p>
       </div>
       <div class="header-right">

@@ -1,7 +1,7 @@
 <template>
   <div class="hub-view">
     <div class="hub-section-header">
-      <h1 class="section-title">AI Hub</h1>
+      <h1 class="section-title">AI</h1>
       <p class="section-desc">
         Raporty wygenerowane przez AI na podstawie analizy systemu — SQL, ETL, zależności, jakość danych i ryzyko wdrożeń.
         Kliknij kartę, aby zobaczyć szczegóły i podgląd raportu.

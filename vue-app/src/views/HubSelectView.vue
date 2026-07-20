@@ -14,16 +14,7 @@
         </p>
       </div>
 
-      <div class="welcome-meta">
-        <div class="meta-row">
-          <span class="meta-label">Rola</span>
-          <span class="meta-value">{{ user.role }}</span>
-        </div>
-        <div class="meta-row">
-          <span class="meta-label">Zalogowano</span>
-          <span class="meta-value">{{ user.loginTime }}</span>
-        </div>
-      </div>
+
     </div>
 
     <!-- Siatka hubów -->
@@ -108,8 +99,8 @@ const hubs = [
     name: 'DDT',
     cls: 'ddt',
     route: 'DdtHub',
-    title: 'Developers Hub',
-    bottomText: 'DEVELOPERS HUB',
+    title: 'Developerzy',
+    bottomText: 'DEVELOPERZY',
     desc: 'Dashboard Streamlit symulujący migrację 5 systemów (Jira, Confluence, IAM, TeamCity, Informatica) z interaktywnymi prognozami i kontrolkami.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
     modules: [
@@ -125,8 +116,8 @@ const hubs = [
     name: 'BUSINESS',
     cls: 'business',
     route: 'BusinessHub',
-    title: 'Business Hub',
-    bottomText: 'BUSINESS HUB',
+    title: 'Biznes',
+    bottomText: 'BIZNES',
     desc: 'KPI, SLA procesów ETL, lista alertów i aktywności w czasie rzeczywistym. Wszystko oparte na symulowanych danych z API — gotowe szkielet pod docelowe integracje.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
     modules: [
@@ -140,8 +131,8 @@ const hubs = [
     name: 'AI',
     cls: 'ai',
     route: 'AiHub',
-    title: 'AI Hub',
-    bottomText: 'AI HUB',
+    title: 'AI',
+    bottomText: 'AI',
     desc: '15 raportów AI z analizą SQL, ETL, jakości danych, ryzyka wdrożenia i dokumentacji. Każdy z metryką, ustaleniami i rekomendacjami.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>',
     modules: [
@@ -156,8 +147,8 @@ const hubs = [
     name: 'PLANNING',
     cls: 'planning',
     route: 'PlanningHub',
-    title: 'Planning Hub',
-    bottomText: 'PLANNING HUB',
+    title: 'Planowanie',
+    bottomText: 'PLANOWANIE',
     desc: 'Zapisuj tematy ze spotkań, układaj priorytety na liście rankingowej lub w macierzy 2×2. Przeciągaj karty, grupuj, planuj.',
     icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
     modules: [

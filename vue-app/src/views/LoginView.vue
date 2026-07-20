@@ -158,11 +158,11 @@
     <!-- === Loading rotator — dolny prawy róg === -->
     <div class="lr-card">
       <div class="lr-loader">
-        <p>ładuję</p>
+        <p>Ładuję</p>
         <div class="lr-words">
           <span class="lr-word">Nexus</span>
           <span class="lr-word">Raporty</span>
-          <span class="lr-word">Baza Danych</span>
+          <span class="lr-word">Baze Danych</span>
           <span class="lr-word">Integracje</span>
           <span class="lr-word">Nexus</span>
         </div>

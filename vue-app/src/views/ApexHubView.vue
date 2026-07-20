@@ -1,7 +1,7 @@
 <template>
   <div class="hub-view">
     <div class="hub-section-header">
-      <h1 class="section-title">Business Hub</h1>
+      <h1 class="section-title">Biznes — Apex</h1>
       <p class="section-desc">
         Dane pobierane z API backendu, wizualizowane w Vue.
         KPI, trendy, raporty, ETL, SLA i alerty w jednym miejscu.
