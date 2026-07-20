@@ -1,11 +1,11 @@
 {
   "backend": {
-    "total": 35.1,
+    "total": 34.9,
     "files": {
       "App.py": {
-        "covered": 236,
-        "missing": 224,
-        "percent": 51.3
+        "covered": 237,
+        "missing": 234,
+        "percent": 50.3
       },
       "generate_ai_reports.py": {
         "covered": 0,
@@ -19,7 +19,7 @@
       },
       "vue-app/src/hubs/developers/streamlit_app.py": {
         "covered": 181,
-        "missing": 459,
+        "missing": 458,
         "percent": 28.3
       }
     }
@@ -33,9 +33,9 @@
     "generated": 18
   },
   "summary": {
-    "backend_total": 35.1,
+    "backend_total": 34.9,
     "frontend_total": 0,
     "reports_ok": 18,
-    "last_run": "2026-07-20T19:22:27.556865"
+    "last_run": "2026-07-20T19:48:45.471327"
   }
 }
