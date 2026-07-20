@@ -1,9 +1,0 @@
-# ZASTĄPIONY przez tests.yml (CI/CD Pipeline)
-# Ten plik pozostawiony — GitHub go zignoruje (pusta konfiguracja)
-name: DEPRECATED
-on: workflow_dispatch
-jobs:
-  dummy:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "This workflow is deprecated. Use tests.yml instead."

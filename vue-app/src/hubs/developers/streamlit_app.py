@@ -1416,7 +1416,6 @@ elif st.session_state.tab_idx == 5:
 
         progress_bar.progress(1.0, text="✅ Deployment zakończony!")
         status_placeholder.success("✅ Proces deploymentu zakończony pomyślnie!")
-        st.balloons()
 
     # --- Historia deploymentów ---
     st.markdown("#### 📋 Historia deploymentów")

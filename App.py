@@ -198,13 +198,14 @@ _STREAMLIT_PIDFILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".
 
 
 def _start_streamlit():
-    """Uruchamia Streamlit jako subproces OS."""
+    """Uruchamia Streamlit jako subproces OS (na root path, bez baseUrlPath)."""
     global _streamlit_process
     if _is_streamlit_alive():
         print(f"[streamlit] Already running on port {STREAMLIT_PORT}")
         return
 
     script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vue-app", "src", "hubs", "developers", "streamlit_app.py")
+    logfile = os.path.join(os.path.dirname(os.path.abspath(__file__)), "streamlit.log")
     cmd = [
         sys.executable, "-m", "streamlit", "run", script,
         "--server.port", str(STREAMLIT_PORT),
@@ -212,7 +213,6 @@ def _start_streamlit():
         "--server.enableCORS", "false",
         "--server.enableXsrfProtection", "false",
         "--server.enableWebsocketCompression", "false",
-        "--server.baseUrlPath=streamlit",
         "--browser.gatherUsageStats", "false",
     ]
     try:
@@ -222,14 +222,24 @@ def _start_streamlit():
         else:
             kwargs["start_new_session"] = True
 
-        _streamlit_process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **kwargs)
+        stderr_fh = open(logfile, "a", buffering=1)
+        stderr_fh.write(f"\n=== Streamlit startup at {datetime.now()} ===\n")
+        stderr_fh.flush()
+
+        _streamlit_process = subprocess.Popen(
+            cmd, stdout=subprocess.DEVNULL, stderr=stderr_fh, **kwargs,
+        )
         with open(_STREAMLIT_PIDFILE, "w") as f:
             f.write(str(_streamlit_process.pid))
         print(f"[streamlit] PID {_streamlit_process.pid} on port {STREAMLIT_PORT}")
+        print(f"[streamlit] Logging stderr to {logfile}")
 
-        time.sleep(2)
+        time.sleep(3)
         if _streamlit_process.poll() is not None:
             print(f"[streamlit] WARNING — died immediately (code {_streamlit_process.returncode})")
+            with open(logfile) as lf:
+                tail = "".join(lf.readlines()[-20:])
+                print(f"[streamlit] Last 20 lines of log:\n{tail}")
         else:
             print("[streamlit] Started successfully")
     except Exception as e:
@@ -724,9 +734,17 @@ def delete_planning_dependency(dep_id: int):
 
 @app.api_route("/streamlit/", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
 @app.api_route("/streamlit/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
+@app.api_route("/_stcore/{path:path}", methods=["GET", "POST", "OPTIONS", "HEAD"])
 async def streamlit_http_proxy(request: Request, path: str = ""):
-    """Proxy HTTP dla Streamlit przez aiohttp."""
-    target_url = f"{STREAMLIT_BASE}/streamlit/{path}"
+    """Proxy HTTP dla Streamlit przez aiohttp.
+    Streamlit chodzi bez baseUrlPath.
+    /streamlit/{path} → http://localhost:8501/{path}
+    /_stcore/{path}  → http://localhost:8501/_stcore/{path}
+    """
+    if request.url.path.startswith("/_stcore/"):
+        target_url = f"{STREAMLIT_BASE}/_stcore/{path}"
+    else:
+        target_url = f"{STREAMLIT_BASE}/{path}"
     try:
         body = await request.body()
         async with aiohttp.ClientSession() as session:
@@ -773,7 +791,7 @@ async def streamlit_ws_proxy(websocket: WebSocket, path: str):
     print(f"[ws] Sub-protocol offered: {subprotocols!r}  selected: {selected!r}")
     await websocket.accept(subprotocol=selected)
 
-    target_url = f"ws://localhost:{STREAMLIT_PORT}/streamlit/_stcore/{path}"
+    target_url = f"ws://localhost:{STREAMLIT_PORT}/_stcore/{path}"
     headers = {k: v for k, v in websocket.headers.items()
                if k.lower() in ("origin", "cookie", "sec-websocket-protocol") and v}
     print(f"[ws] New connection → {target_url}  headers={headers}")

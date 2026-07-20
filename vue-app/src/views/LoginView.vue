@@ -54,15 +54,27 @@
       <!-- PRAWY PANEL: Logowanie -->
       <div class="right-panel">
         <div class="login-card">
-          <!-- Logo -->
-          <div class="login-logo">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="logo-icon">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          <!-- Dekoracyjny element wizualny -->
+          <div class="login-deco">
+            <svg width="100%" height="80" viewBox="0 0 320 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="deco-svg">
+              <defs>
+                <linearGradient id="decoGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="var(--accent-primary)" stop-opacity="0.35"/>
+                  <stop offset="50%" stop-color="var(--accent-primary)" stop-opacity="0.12"/>
+                  <stop offset="100%" stop-color="var(--accent-primary)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- Łuki reprezentujące przepływ danych -->
+              <path d="M10 65 Q40 10 80 40 Q120 70 160 30 Q200 -10 240 25 Q280 60 310 35" stroke="var(--accent-primary)" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+              <path d="M20 70 Q50 25 90 50 Q130 75 170 40 Q210 5 250 35 Q290 65 310 45" stroke="var(--accent-primary)" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.25"/>
+              <!-- Kropki na przecięciach -->
+              <circle cx="80" cy="40" r="4" fill="var(--accent-primary)" opacity="0.6"/>
+              <circle cx="160" cy="30" r="3" fill="var(--accent-primary)" opacity="0.4"/>
+              <circle cx="240" cy="25" r="5" fill="var(--accent-primary)" opacity="0.7"/>
+              <circle cx="310" cy="35" r="2.5" fill="var(--accent-primary)" opacity="0.3"/>
+              <!-- Wypełnienie pod krzywą -->
+              <path d="M10 65 Q40 10 80 40 Q120 70 160 30 Q200 -10 240 25 Q280 60 310 35 V80 H10 Z" fill="url(#decoGrad)"/>
             </svg>
-            <div class="logo-text">
-              <span class="logo-title">Data<span class="accent">Hub</span></span>
-              <span class="logo-sub">Portal integracyjny</span>
-            </div>
           </div>
 
           <!-- Formularz -->
@@ -146,13 +158,13 @@
     <!-- === Loading rotator — dolny prawy róg === -->
     <div class="lr-card">
       <div class="lr-loader">
-        <p>loading</p>
+        <p>ładuję</p>
         <div class="lr-words">
-          <span class="lr-word">huby</span>
-          <span class="lr-word">raporty</span>
-          <span class="lr-word">dane</span>
-          <span class="lr-word">integracje</span>
-          <span class="lr-word">huby</span>
+          <span class="lr-word">Nexus</span>
+          <span class="lr-word">Raporty</span>
+          <span class="lr-word">Baza Danych</span>
+          <span class="lr-word">Integracje</span>
+          <span class="lr-word">Nexus</span>
         </div>
       </div>
     </div>
@@ -425,46 +437,25 @@ async function handleLogin() {
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-color);
   border-radius: 20px;
-  padding: 40px;
+  padding: 36px 40px 40px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
   box-shadow: var(--card-shadow);
 }
 
-/* Logo */
-.login-logo {
+/* Dekoracyjny element */
+.login-deco {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+  height: 88px;
+  margin-bottom: 4px;
 }
 
-.logo-icon {
-  color: var(--accent-primary);
-}
-
-.logo-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.logo-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.logo-title .accent {
-  color: var(--accent-primary);
-}
-
-.logo-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  font-weight: 500;
-  margin-top: 2px;
+.deco-svg {
+  max-width: 320px;
+  height: 80px;
 }
 
 /* Form */

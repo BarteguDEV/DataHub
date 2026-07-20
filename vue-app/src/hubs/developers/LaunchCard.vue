@@ -24,7 +24,7 @@
       </div>
 
       <div v-if="lastCheck" class="check-result" :class="{ error: !isAlive }">
-        {{ isAlive ? '✓ Serwer Streamlit odpowiada' : '✗ Serwer nie odpowiada — uruchom: streamlit run src/hubs/developers/streamlit_app.py --server.port 8501' }}
+        {{ isAlive ? '✓ Serwer Streamlit odpowiada' : '✗ Serwer nie odpowiada — uruchom: streamlit run vue-app/src/hubs/developers/streamlit_app.py --server.port 8501' }}
       </div>
     </div>
 
