@@ -7,7 +7,6 @@
         </svg>
         Significant Issue
       </h2>
-      <span class="badge-warn">3 systemy</span>
     </div>
 
     <!-- Karty systemów -->
@@ -16,7 +15,6 @@
         v-for="item in items"
         :key="item.id"
         class="issue-card-item"
-        :style="{ '--item-color': item.color }"
       >
         <div class="issue-item-header">
           <span class="issue-badge">{{ item.id }}</span>
@@ -134,7 +132,6 @@
           </svg>
           Rozwiązywalność wzrosła o <strong>5.2%</strong> w tym tygodniu
         </div>
-        <div class="footer-note">Łącznie 3 systemy monitorowane 24/7</div>
       </div>
     </div>
   </section>
@@ -247,16 +244,6 @@ function moveTooltip(e) {
   color: #ff5252;
   flex-shrink: 0;
 }
-.badge-warn {
-  font-size: 10px;
-  font-weight: 500;
-  color: #ff5252;
-  padding: 3px 10px;
-  border-radius: 100px;
-  background: rgba(255,82,82,0.12);
-  white-space: nowrap;
-}
-
 .issue-grid {
   display: flex;
   flex-direction: column;
@@ -508,9 +495,5 @@ function moveTooltip(e) {
 }
 .footer-trend strong {
   color: var(--accent-primary);
-}
-.footer-note {
-  color: var(--text-muted);
-  font-size: 11px;
 }
 </style>

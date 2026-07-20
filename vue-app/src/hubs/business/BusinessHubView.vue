@@ -11,14 +11,17 @@
     <KpiBar :kpis="kpis" @open="openKpiModal" />
 
     <div class="two-col">
-      <!-- Lewa kolumna: komunikaty + rozkład -->
+      <!-- Lewa kolumna: komunikaty + manual -->
       <div class="left-messages">
         <MessageBar
           :messages="messages"
           :total="totalMsgs"
+          :segments="donutSegments"
+          :successRate="successRate"
           @open="openMsgModal"
+          @date-change="onDateChange"
         />
-        <DonutChart :segments="donutSegments" :successRate="successRate" />
+        <ManualSend />
       </div>
       <!-- Prawa kolumna: Significant Issue -->
       <SignificantIssue :items="significantIssueData" />
@@ -45,7 +48,7 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import { getToken } from '../../api.js'
 import KpiBar from './KpiBar.vue'
 import MessageBar from './MessageBar.vue'
-import DonutChart from './DonutChart.vue'
+import ManualSend from './ManualSend.vue'
 import ActivityList from './ActivityList.vue'
 import EtlTable from './EtlTable.vue'
 import SlaTable from './SlaTable.vue'
@@ -76,17 +79,50 @@ function genSpark() {
   return pts.join(' ')
 }
 
-function generateMessages() {
-  const raw = { SENT: { count: 28450, color: '#00c853' }, ACPT: { count: 27120, color: '#00e5ff' }, RJCT: { count: 890, color: '#ff5252' }, INVALID: { count: 340, color: '#ff9100' }, READY: { count: 4120, color: '#536dfe' } }
-  const total = Object.values(raw).reduce((s, v) => s + v.count, 0)
-  return Object.entries(raw).map(([label, v]) => ({ label, count: v.count, color: v.color, pct: Math.round((v.count / total) * 100) }))
+// Proporcje: SENT 15%, ACPT 60%, RJCT 5%, INVALID 1%, READY 19%
+const PROPORTIONS = [
+  { label: 'SENT', color: '#00c853', pct: 0.15 },
+  { label: 'ACPT', color: '#00e5ff', pct: 0.60 },
+  { label: 'RJCT', color: '#ff5252', pct: 0.05 },
+  { label: 'INVALID', color: '#ff9100', pct: 0.01 },
+  { label: 'READY', color: '#536dfe', pct: 0.19 },
+]
+
+function generateMessages(seed) {
+  // pseudo-losowość z seeda (daty)
+  const rng = seed
+    ? (seed.split('-').reduce((a, b) => a + parseInt(b), 0) * 9301 + 49297) % 233280
+    : Date.now()
+  const total = 30000 + (rng % 50000) // 30k–80k
+
+  const counts = PROPORTIONS.map(p => ({
+    label: p.label,
+    count: Math.round(total * p.pct),
+    color: p.color,
+  }))
+
+  // dodaj małe wahanie (±5%)
+  const adjusted = counts.map(c => ({
+    ...c,
+    count: Math.round(c.count * (0.95 + Math.random() * 0.1)),
+  }))
+
+  const grandTotal = adjusted.reduce((s, v) => s + v.count, 0)
+  return adjusted.map(v => ({
+    ...v,
+    pct: Math.round((v.count / grandTotal) * 100),
+  }))
+}
+
+function onDateChange(date) {
+  messages.value = generateMessages(date)
 }
 
 const totalMsgs = computed(() => messages.value.reduce((s, m) => s + m.count, 0))
 const successRate = computed(() => {
-  const sent = messages.value.find(m => m.label === 'SENT')?.count || 1
-  const acpt = messages.value.find(m => m.label === 'ACPT')?.count || 0
-  return Math.round((acpt / sent) * 100)
+  const acpt = messages.value.find(m => m.label === 'ACPT')?.count || 1
+  const total = messages.value.reduce((s, m) => s + m.count, 0) || 1
+  return Math.round((acpt / total) * 100)
 })
 const donutSegments = computed(() => {
   const total = totalMsgs.value || 1

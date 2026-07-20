@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataHub — Chart POC</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-page: #0d0f14;
+    --bg-card: #15181f;
+    --bg-hover: #1c202a;
+    --border: #262a35;
+    --text-primary: #e8eaed;
+    --text-secondary: #9aa0ab;
+    --text-muted: #5f6570;
+    --accent: #00c853;
+  }
+
+  body {
+    background: var(--bg-page);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, sans-serif;
+    padding: 40px 24px;
+  }
+
+  .header {
+    max-width: 1400px;
+    margin: 0 auto 32px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .header p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    max-width: 700px;
+    line-height: 1.6;
+  }
+
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 36px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title .letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: var(--accent);
+    color: #000;
+    font-size: 13px;
+    font-weight: 800;
+    border-radius: 6px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+  }
+
+  .card h2 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+  }
+
+  .card .sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+
+  .card canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 220px;
+  }
+
+  .verdict {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .verdict.good {
+    background: rgba(0,200,83,0.08);
+    border: 1px solid rgba(0,200,83,0.15);
+    color: #00c853;
+  }
+
+  .verdict.meh {
+    background: rgba(255,145,0,0.08);
+    border: 1px solid rgba(255,145,0,0.15);
+    color: #ff9100;
+  }
+
+  .scenario-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .scenario-tabs button {
+    padding: 4px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .scenario-tabs button.active {
+    background: rgba(83,109,254,0.12);
+    border-color: #536dfe;
+    color: #536dfe;
+  }
+
+  .scenario-tabs button:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+    body { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 Wybór wykresu — warianty A/B/C/D</h1>
+  <p>
+    Symulujemy <strong>poranek</strong> (rano 5 statusów aktywnych) i <strong>wieczór</strong>
+    (RJCT i INVALID bliskie zera). Każdy wariant ma oba scenariusze — kliknij przycisk,
+    żeby zobaczyć jak wykres reaguje na zmianę profilu danych.
+  </p>
+</div>
+
+<!-- ===== WARIANT A: POJEDYNCZY SŁUPKOWY ===== -->
+<div class="section-title"><span class="letter">A</span> Pojedynczy słupkowy (bez grupowania)</div>
+<div class="grid">
+  <div class="card">
+    <h2>Poranek — 5 statusów</h2>
+    <div class="sub">Każdy status = jeden słupek. Proste i czytelne.</div>
+    <div class="chart-wrap"><canvas id="a_morning"></canvas></div>
+    <div class="verdict good">✅ Zero = brak słupka. Działa przy 2 lub 5 statusach. Najprostszy w odbiorze.</div>
+  </div>
+  <div class="card">
+    <h2>Wieczór — 2 statusy</h2>
+    <div class="sub">RJCT ↓, INVALID ↓ — słupki po prostu znikają.</div>
+    <div class="chart-wrap"><canvas id="a_evening"></canvas></div>
+    <div class="verdict good">✅ Nadal czytelny, brakujące kategorie nie przeszkadzają.</div>
+  </div>
+</div>
+
+<!-- ===== WARIANT B: SKUMULOWANY SŁUPKOWY ===== -->
+<div class="section-title"><span class="letter">B</span> Skumulowany słupkowy (stacked bar)</div>
+<div class="grid">
+  <div class="card">
+    <h2>Poranek — 5 segmentów</h2>
+    <div class="sub">Jeden słupek = 100% wysyłki. Podział na kolory.</div>
+    <div class="chart-wrap"><canvas id="b_morning"></canvas></div>
+    <div class="verdict good">✅ Jeden słupek = pełna wysyłka, struktura widoczna zawsze.</div>
+  </div>
+  <div class="card">
+    <h2>Wieczór — 2 segmenty</h2>
+    <div class="sub">RJCT i INVALID → 0, ale słupek wciąż pełny.</div>
+    <div class="chart-wrap"><canvas id="b_evening"></canvas></div>
+    <div class="verdict good">✅ Nadal jeden pełny słupek, struktura się zmienia naturalnie.</div>
+  </div>
+</div>
+
+<!-- ===== WARIANT C: LINIOWY ===== -->
+<div class="section-title"><span class="letter">C</span> Liniowy — trend w czasie</div>
+<div class="grid">
+  <div class="card">
+    <h2>Poranek — pełny dzień</h2>
+    <div class="sub">SENT i ACPT w interwale 30-minutowym przez cały dzień.</div>
+    <div class="chart-wrap"><canvas id="c_morning"></canvas></div>
+    <div class="verdict meh">⚠️ Wymaga danych czasowych (timestamp przy każdym statusie). Jeśli nie masz — nie zadziała.</div>
+  </div>
+  <div class="card">
+    <h2>Wieczór — dane ucięte</h2>
+    <div class="sub">Linie urywają się po ostatniej danej. Widać kiedy skończyła się aktywność.</div>
+    <div class="chart-wrap"><canvas id="c_evening"></canvas></div>
+    <div class="verdict good">✅ Naturalne ucięcie linii pokazuje koniec wysyłki.</div>
+  </div>
+</div>
+
+<!-- ===== WARIANT D: DONUT ===== -->
+<div class="section-title"><span class="letter">D</span> Donut — udział procentowy</div>
+<div class="grid">
+  <div class="card">
+    <h2>Poranek — 5 segmentów</h2>
+    <div class="sub">Donut z dziurą. Kolory = statusy.</div>
+    <div class="chart-wrap"><canvas id="d_morning"></canvas></div>
+    <div class="verdict good">✅ Ładny, wizualnie atrakcyjny.</div>
+  </div>
+  <div class="card">
+    <h2>Wieczór — 2 segmenty</h2>
+    <div class="sub">RJCT i INVALID znikają → zostają 2 grube kawałki.</div>
+    <div class="chart-wrap"><canvas id="d_evening"></canvas></div>
+    <div class="verdict meh">⚠️ Przy 2 segmentach donut robi się "pusty" i mało czytelny.</div>
+  </div>
+</div>
+
+<script>
+Chart.defaults.color = '#9aa0ab';
+Chart.defaults.borderColor = '#262a35';
+Chart.defaults.font.family = "'Inter', -apple-system, sans-serif";
+
+const COLORS = {
+  sent: '#00c853',
+  acpt: '#00e5ff',
+  rjct: '#ff5252',
+  invalid: '#ff9100',
+  ready: '#536dfe',
+};
+
+// --- DANE: poranek ---
+const morning = {
+  labels: ['SENT', 'ACPT', 'READY', 'RJCT', 'INVALID'],
+  values: [28450, 27120, 4120, 890, 340],
+  colors: [COLORS.sent, COLORS.acpt, COLORS.ready, COLORS.rjct, COLORS.invalid],
+};
+
+// --- DANE: wieczór (RJCT i INVALID blisko 0) ---
+const evening = {
+  labels: ['SENT', 'ACPT', 'READY', 'RJCT', 'INVALID'],
+  values: [28450, 27120, 4120, 12, 3],
+  colors: [COLORS.sent, COLORS.acpt, COLORS.ready, COLORS.rjct, COLORS.invalid],
+};
+
+function makeCtx(id) { return document.getElementById(id); }
+
+// ===================================================================
+// WARIANT A — Pojedynczy słupkowy
+// ===================================================================
+function renderA(container, data, label) {
+  if (container._chart) container._chart.destroy();
+  container._chart = new Chart(container, {
+    type: 'bar',
+    data: {
+      labels: data.labels,
+      datasets: [{
+        label,
+        data: data.values,
+        backgroundColor: data.colors,
+        borderRadius: 4,
+        barThickness: 32,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.parsed.y.toLocaleString()
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: 'rgba(38,42,53,0.6)' } }
+      }
+    }
+  });
+}
+
+renderA(makeCtx('a_morning'), morning, 'Liczba');
+renderA(makeCtx('a_evening'), evening, 'Liczba');
+
+// ===================================================================
+// WARIANT B — Skumulowany słupkowy
+// ===================================================================
+function renderB(container, data) {
+  if (container._chart) container._chart.destroy();
+  const datasets = data.labels.map((l, i) => ({
+    label: l,
+    data: data.values.map((_, di) => di === i ? data.values[i] : 0),
+    backgroundColor: data.colors[i],
+    borderRadius: 2,
+  }));
+  container._chart = new Chart(container, {
+    type: 'bar',
+    data: { labels: ['Wysyłka'], datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'right', labels: { usePointStyle: true, padding: 10 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString()
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(38,42,53,0.6)' } }
+      }
+    }
+  });
+}
+
+renderB(makeCtx('b_morning'), morning);
+renderB(makeCtx('b_evening'), evening);
+
+// ===================================================================
+// WARIANT C — Liniowy (trend w czasie)
+// ===================================================================
+function generateTimeline(baseSent, baseAcpt, hours) {
+  const labels = [];
+  const sent = [];
+  const acpt = [];
+  for (let h = 6; h < hours; h++) {
+    labels.push(String(h) + ':00');
+    const factor = h < 8 ? 0.3 : h < 10 ? 0.7 : h < 15 ? 1.0 : h < 18 ? 0.8 : 0.5;
+    sent.push(Math.round(baseSent * factor * (0.85 + Math.random() * 0.3)));
+    acpt.push(Math.round(baseAcpt * factor * (0.85 + Math.random() * 0.3)));
+  }
+  return { labels, sent, acpt };
+}
+
+const dayFull = generateTimeline(3200, 2900, 22);
+const dayShort = generateTimeline(3200, 2900, 14); // kończy się o 14:00
+
+function renderC(container, data) {
+  if (container._chart) container._chart.destroy();
+  container._chart = new Chart(container, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          label: 'SENT',
+          data: data.sent,
+          borderColor: COLORS.sent,
+          backgroundColor: 'rgba(0,200,83,0.08)',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 2,
+          pointHitRadius: 6,
+        },
+        {
+          label: 'ACPT',
+          data: data.acpt,
+          borderColor: COLORS.acpt,
+          backgroundColor: 'rgba(0,229,255,0.08)',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 2,
+          pointHitRadius: 6,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { usePointStyle: true } },
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: 'rgba(38,42,53,0.6)' } }
+      }
+    }
+  });
+}
+
+renderC(makeCtx('c_morning'), dayFull);
+renderC(makeCtx('c_evening'), dayShort);
+
+// ===================================================================
+// WARIANT D — Donut
+// ===================================================================
+function renderD(container, data) {
+  if (container._chart) container._chart.destroy();
+  container._chart = new Chart(container, {
+    type: 'doughnut',
+    data: {
+      labels: data.labels,
+      datasets: [{
+        data: data.values,
+        backgroundColor: data.colors,
+        borderWidth: 2,
+        borderColor: '#15181f',
+        borderRadius: 4,
+        spacing: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '68%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { usePointStyle: true, padding: 12 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.label + ': ' + ctx.parsed.toLocaleString()
+          }
+        }
+      }
+    }
+  });
+}
+
+renderD(makeCtx('d_morning'), morning);
+renderD(makeCtx('d_evening'), evening);
+</script>
+</body>
+</html>
