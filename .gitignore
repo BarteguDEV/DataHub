@@ -1,39 +1,90 @@
-# Python
+# === Python ===
 __pycache__/
 *.py[cod]
+*.pyo
 *.egg-info/
+*.egg
+*.whl
+dist/
+build/
+.eggs/
 venv/
 .venv/
-.env
-*.db
+.python-version
 
-# IDE
+# === Środowisko i konfiguracja ===
+# .env zawiera sekrety (JWT_SECRET, DATABASE_URL) — nigdy nie commitować
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.secrets
+secrets.*
+credentials.*
+config.local.*
+
+# === Bazy danych (lokalne instancje) ===
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# === Logi i PID ===
+*.log
+*.pid
+npm-debug.log*
+
+# === IDE / edytory ===
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# OS
+# === OS ===
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Build artifacts (GitHub Actions)
+# === Build artifacts (GitHub Actions / lokalny build) ===
 *.zip
 .python_packages/
 deployment/
+*.vsix
 
-# Coverage reports (regenerowane lokalnie)
+# === Coverage (generowane lokalnie, nie commitować) ===
+.coverage
+.coverage.*
 coverage.json
+coverage.xml
+htmlcov/
+.pytest_cache/
 static/test-coverage.json
 # Ale wersja wygenerowana przez CI ma być commitowana
 !static/test-coverage.json
 
-# AI reports (regenerowane przez generate_ai_reports.py)
+# === AI reports (regenerowane przez generate_ai_reports.py) ===
 ai-reports/
 
-# Node / Vue
+# === Node / Vue ===
 node_modules/
 vue-app/node_modules/
 static/vue/
+vue-app/dist/
 
-# Local dev scripts
+# === Streamlit runtime ===
+.streamlit/
+.streamlit.pid
+
+# === Lokalne skrypty dev ===
 run_local.ps1
 run_local.bat
+
+# === Lokalne logi AI (per-developer, nie commitować) ===
+.learnings/
+
+# === Cache narzędzi ===
+.mypy_cache/
+.ruff_cache/
+CLAUDE_PROMPT.md

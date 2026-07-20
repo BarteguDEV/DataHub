@@ -46,7 +46,7 @@ load_dotenv()
 # Version
 # ===========================================================================
 
-APP_VERSION = "v0.15.2"
+APP_VERSION = "v0.33.0"
 
 # ===========================================================================
 # JWT Config
@@ -236,6 +236,28 @@ def _start_streamlit():
         print(f"[streamlit] ERROR — {e}")
 
 
+def _is_process_alive(pid: int) -> bool:
+    """Sprawdza czy proces o danym PID istnieje (platformowo)."""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            # PROCESS_QUERY_INFORMATION = 0x0400
+            handle = kernel32.OpenProcess(0x0400, False, pid)
+            if not handle:
+                return False
+            kernel32.CloseHandle(handle)
+            return True
+        except Exception:
+            return False
+    else:
+        try:
+            os.kill(pid, 0)
+            return True
+        except OSError:
+            return False
+
+
 def _is_streamlit_alive():
     if _streamlit_process is not None and _streamlit_process.poll() is None:
         return True
@@ -243,10 +265,11 @@ def _is_streamlit_alive():
     if pidfile.exists():
         try:
             pid = int(pidfile.read_text().strip())
-            os.kill(pid, 0)
-            return True
-        except (OSError, ValueError):
-            pidfile.unlink(missing_ok=True)
+            if _is_process_alive(pid):
+                return True
+        except (OSError, ValueError, SystemError):
+            pass
+        pidfile.unlink(missing_ok=True)
     return False
 
 
@@ -560,6 +583,139 @@ def get_test_coverage():
         "error": "Brak raportu coverage — uruchom: python generate_coverage.py",
         "summary": {"backend_total": 0, "frontend_total": 0, "reports_ok": 0},
     })
+
+
+# ===========================================================================
+# API — Planning Hub
+# ===========================================================================
+
+# In-memory storage for POC
+planning_topics = []
+planning_next_id = 1
+
+class PlanningTopic(BaseModel):
+    id: int
+    title: str
+    tag: str = "cross"
+    status: str = "todo"
+    quadrant: Optional[str] = None
+    order: int = 0
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+class PlanningTopicCreate(BaseModel):
+    title: str
+    tag: str = "cross"
+    status: str = "todo"
+
+class PlanningTopicUpdate(BaseModel):
+    title: Optional[str] = None
+    tag: Optional[str] = None
+    status: Optional[str] = None
+    quadrant: Optional[str] = None
+    order: Optional[int] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+@app.get("/api/planning/topics")
+def get_planning_topics():
+    """Zwraca wszystkie tematy."""
+    return JSONResponse(content=[t.dict() for t in planning_topics])
+
+@app.post("/api/planning/topics", status_code=201)
+def create_planning_topic(body: PlanningTopicCreate):
+    """Dodaje nowy temat."""
+    global planning_next_id
+    topic = PlanningTopic(
+        id=planning_next_id,
+        title=body.title,
+        tag=body.tag,
+        order=len(planning_topics),
+    )
+    planning_next_id += 1
+    planning_topics.append(topic)
+    return JSONResponse(content=topic.dict(), status_code=201)
+
+@app.put("/api/planning/topics/{topic_id}")
+def update_planning_topic(topic_id: int, body: PlanningTopicUpdate):
+    """Aktualizuje temat (quadrant, order, title, tag)."""
+    for t in planning_topics:
+        if t.id == topic_id:
+            if body.title is not None:
+                t.title = body.title
+            if body.tag is not None:
+                t.tag = body.tag
+            if body.status is not None:
+                t.status = body.status
+            if body.quadrant is not None:
+                t.quadrant = body.quadrant
+            if body.order is not None:
+                t.order = body.order
+            if body.start_date is not None:
+                t.start_date = body.start_date
+            if body.end_date is not None:
+                t.end_date = body.end_date
+            return JSONResponse(content=t.dict())
+    return JSONResponse(content={"error": "Not found"}, status_code=404)
+
+@app.delete("/api/planning/topics/{topic_id}")
+def delete_planning_topic(topic_id: int):
+    """Usuwa temat."""
+    global planning_topics
+    planning_topics = [t for t in planning_topics if t.id != topic_id]
+    # usuń też zależności powiązane z tym tematem
+    global planning_dependencies
+    planning_dependencies = [d for d in planning_dependencies if d.from_id != topic_id and d.to_id != topic_id]
+    return JSONResponse(content={"ok": True})
+
+
+# ===========================================================================
+# API — Planning Hub: zależności (graf)
+# ===========================================================================
+
+planning_dependencies = []
+planning_dep_next_id = 1
+
+class PlanningDependency(BaseModel):
+    id: int
+    from_id: int
+    to_id: int
+    type: str = "blocks"  # blocks | tested_by | depends_on
+
+class PlanningDependencyCreate(BaseModel):
+    from_id: int
+    to_id: int
+    type: str = "blocks"
+
+@app.get("/api/planning/dependencies")
+def get_planning_dependencies():
+    """Zwraca wszystkie zależności."""
+    return JSONResponse(content=[d.dict() for d in planning_dependencies])
+
+@app.post("/api/planning/dependencies", status_code=201)
+def create_planning_dependency(body: PlanningDependencyCreate):
+    """Dodaje zależność."""
+    global planning_dep_next_id
+    # zapobiega duplikatom
+    for existing in planning_dependencies:
+        if existing.from_id == body.from_id and existing.to_id == body.to_id:
+            return JSONResponse(content=existing.dict(), status_code=200)
+    dep = PlanningDependency(
+        id=planning_dep_next_id,
+        from_id=body.from_id,
+        to_id=body.to_id,
+        type=body.type,
+    )
+    planning_dep_next_id += 1
+    planning_dependencies.append(dep)
+    return JSONResponse(content=dep.dict(), status_code=201)
+
+@app.delete("/api/planning/dependencies/{dep_id}")
+def delete_planning_dependency(dep_id: int):
+    """Usuwa zależność."""
+    global planning_dependencies
+    planning_dependencies = [d for d in planning_dependencies if d.id != dep_id]
+    return JSONResponse(content={"ok": True})
 
 
 # ===========================================================================

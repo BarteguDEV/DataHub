@@ -1,129 +1,144 @@
 <template>
   <div class="login-page">
-    <!-- Tło animowane — siatka + cząsteczki -->
-    <div class="bg-grid"></div>
-    <div class="bg-particles">
-      <div
-        v-for="(style, i) in particles"
-        :key="i"
-        class="particle"
-        :class="{ 'is-star': i % 2 === 0 }"
-        :style="style"
-      ></div>
-    </div>
-    <div class="bg-orbs">
-      <div class="orb orb-1"></div>
-      <div class="orb orb-2"></div>
-      <div class="orb orb-3"></div>
-    </div>
-
-    <!-- Panel logowania -->
-    <div class="login-container">
-      <div class="login-card">
-        <!-- Logo -->
-        <div class="login-logo">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="logo-icon">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-          </svg>
-          <div class="logo-text">
-            <span class="logo-title">Data<span class="accent">Hub</span></span>
-            <span class="logo-sub">Portal integracyjny</span>
+    <!-- Split layout: 50/50 -->
+    <div class="split-layout">
+      <!-- LEWY PANEL: Branding + systemy -->
+      <div class="left-panel">
+        <div class="brand-section">
+          <div class="brand-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" class="brand-svg">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
           </div>
+          <h1 class="brand-name">Kopa<span class="brand-accent">Nexus</span></h1>
+          <p class="brand-tagline">Raportowanie instrumentów pochodnych.</p>
+          <p class="brand-systems">Zintegrowane systemy: EMIR_3 / SFTR / WITIP / ARM</p>
         </div>
 
-        <!-- Formularz -->
-        <div class="login-form">
-          <h1 class="form-title">Witaj w portalu</h1>
-          <p class="form-desc">Zaloguj się, aby uzyskać dostęp do hubów</p>
-
-          <div class="input-group">
-            <label for="username">Użytkownik</label>
-            <div class="input-wrapper">
-              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-              <input
-                id="username"
-                v-model="username"
-                type="text"
-                placeholder="np. admin"
-                autocomplete="username"
-                @keyup.enter="handleLogin"
-              />
-            </div>
-          </div>
-
-          <div class="input-group">
-            <label for="password">Hasło</label>
-            <div class="input-wrapper">
-              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              <input
-                id="password"
-                v-model="password"
-                type="password"
-                placeholder="••••••••"
-                autocomplete="current-password"
-                @keyup.enter="handleLogin"
-              />
-            </div>
-          </div>
-
-          <div class="input-group">
-            <label for="system">System</label>
-            <div class="input-wrapper select-wrapper">
-              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-              </svg>
-              <select id="system" v-model="systemId" class="select-input">
-                <option v-for="s in availableSystems" :key="s.id" :value="s.id">
-                  {{ s.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <p v-if="error" class="error-msg">{{ error }}</p>
-
-          <button
-            class="login-btn"
-            :disabled="!canLogin || loggingIn"
-            @click="handleLogin"
-          >
-            <span v-if="!loggingIn">Zaloguj się</span>
-            <span v-else class="btn-loading">
-              <span class="spinner"></span>
-              Logowanie...
-            </span>
+        <!-- Przełącznik motywu jasny/ciemny -->
+        <div class="theme-toggle-wrapper">
+          <button class="theme-toggle" @click="theme.toggle()" :title="theme.isDark.value ? 'Tryb jasny' : 'Tryb ciemny'">
+            <!-- Sun icon -->
+            <svg v-if="!theme.isDark.value" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <!-- Moon icon -->
+            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+            <span class="theme-toggle-label">{{ theme.isDark.value ? 'Ciemny' : 'Jasny' }}</span>
           </button>
         </div>
 
-        <!-- Stopka -->
-        <div class="login-footer">
-          <span class="footer-version">{{ appVersion }}</span>
-          <span class="footer-env">FastAPI + Vue.js + Python</span>
-          <span class="footer-dev">developer: Bartegu</span>
+        <div class="system-cards">
+          <div v-for="sys in systemInfo" :key="sys.id" class="sys-card">
+            <div class="sys-card-header">
+              <span class="sys-name">{{ sys.label }}</span>
+              <span class="sys-status" :class="sys.online ? 'status-online' : 'status-offline'">
+                <span class="status-dot"></span>
+                {{ sys.online ? 'Online' : 'Offline' }}
+              </span>
+            </div>
+            <div class="sys-card-body">
+              <span class="sys-version-label">Wersja systemu</span>
+              <span class="sys-version">{{ sys.version }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Statystyki -->
-      <div class="login-stats">
-        <div class="stat-item">
-          <span class="stat-num">3</span>
-          <span class="stat-label">Huby</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-num">15</span>
-          <span class="stat-label">Moduły</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-num">6</span>
-          <span class="stat-label">Integracje</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-num">4</span>
-          <span class="stat-label">Systemy</span>
+      <!-- PRAWY PANEL: Logowanie -->
+      <div class="right-panel">
+        <div class="login-card">
+          <!-- Logo -->
+          <div class="login-logo">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="logo-icon">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            <div class="logo-text">
+              <span class="logo-title">Data<span class="accent">Hub</span></span>
+              <span class="logo-sub">Portal integracyjny</span>
+            </div>
+          </div>
+
+          <!-- Formularz -->
+          <div class="login-form">
+            <h1 class="form-title">Witaj w portalu</h1>
+            <p class="form-desc">Zaloguj się, aby uzyskać dostęp do hubów</p>
+
+            <div class="input-group">
+              <label for="username">Użytkownik</label>
+              <div class="input-wrapper">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                <input
+                  id="username"
+                  v-model="username"
+                  type="text"
+                  placeholder="np. admin"
+                  autocomplete="username"
+                  @keyup.enter="handleLogin"
+                />
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="password">Hasło</label>
+              <div class="input-wrapper">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input
+                  id="password"
+                  v-model="password"
+                  type="password"
+                  placeholder="••••••••"
+                  autocomplete="current-password"
+                  @keyup.enter="handleLogin"
+                />
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="system">System</label>
+              <div class="input-wrapper select-wrapper">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+                <select id="system" v-model="systemId" class="select-input">
+                  <option v-for="s in availableSystems" :key="s.id" :value="s.id">
+                    {{ s.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <p v-if="error" class="error-msg">{{ error }}</p>
+
+            <button
+              class="login-btn"
+              :disabled="!canLogin || loggingIn"
+              @click="handleLogin"
+            >
+              <span v-if="!loggingIn">Zaloguj się</span>
+              <span v-else class="btn-loading">
+                <span class="spinner"></span>
+                Logowanie...
+              </span>
+            </button>
+          </div>
+
+          <!-- Stopka -->
+          <div class="login-footer">
+            <span class="footer-version">{{ appVersion }}</span>
+            <span class="footer-env">FastAPI + Vue.js + Python</span>
+            <span class="footer-dev">developer: Bartegu</span>
+          </div>
         </div>
       </div>
     </div>
@@ -149,9 +164,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/stores/auth'
 import { useVersion } from '@/stores/version'
+import { useTheme } from '@/stores/theme'
 
 const router = useRouter()
 const { login } = useAuth()
+const theme = useTheme()
 
 const { appVersion, fetchVersion } = useVersion()
 
@@ -166,6 +183,13 @@ const availableSystems = [
   { id: 'WITIP', label: 'WITIP' },
   { id: 'SFTR', label: 'SFTR' },
   { id: 'FATCRS', label: 'FATCRS' },
+]
+
+const systemInfo = [
+  { id: 'EMIR_3', label: 'EMIR_3', version: '001.002.077', online: true },
+  { id: 'SFTR',   label: 'SFTR',   version: '002.001.034', online: true },
+  { id: 'WITIP',  label: 'WITIP',  version: '003.000.112', online: true },
+  { id: 'ARM',    label: 'ARM',    version: '001.004.056', online: true },
 ]
 
 onMounted(fetchVersion)
@@ -188,211 +212,224 @@ async function handleLogin() {
   }
 }
 
-// Pre-generowane style cząsteczek — stabilne, nie zmieniają się przy re-renderze
-function generateParticleStyle(i) {
-  const isStar = i % 2 === 0
-  const base = isStar ? 4 : 2
-  const extra = Math.random() * (isStar ? 6 : 3)
-  const size = base + extra
-  const x = Math.random() * 100
-  const y = Math.random() * 100
-  const delay = Math.random() * 8
-  const duration = 5 + Math.random() * 8
-  const opacity = isStar ? 0.3 + Math.random() * 0.5 : 0.2 + Math.random() * 0.3
-  const driftX = -30 + Math.random() * 60
-  return {
-    width: `${size}px`,
-    height: `${size}px`,
-    left: `${x}%`,
-    top: `${y}%`,
-    animationDelay: `${delay}s`,
-    animationDuration: `${duration}s`,
-    opacity,
-    '--drift-x': `${driftX}px`,
-  }
-}
-
-const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 </script>
 
 <style scoped>
 .login-page {
-  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #07090e;
-  overflow: hidden;
 }
 
 /* ====================================
-   ANIMOWANE TŁO
+   SPLIT LAYOUT — 50/50
    ==================================== */
 
-/* Siatka */
-.bg-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0, 200, 83, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 200, 83, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 70%);
-}
-
-/* Cząsteczki i gwiazdy */
-.bg-particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  background: #00c853;
-  box-shadow: 0 0 4px rgba(0, 200, 83, 0.3);
-  animation: float-up linear infinite;
-  will-change: transform, opacity;
-}
-
-.particle.is-star {
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  clip-path: polygon(
-    50% 0%, 61% 35%, 98% 35%, 68% 57%,
-    79% 91%, 50% 70%, 21% 91%, 32% 57%,
-    2% 35%, 39% 35%
-  );
-  background: linear-gradient(135deg, #00c853, #69f0ae);
-  filter: drop-shadow(0 0 3px rgba(0, 200, 83, 0.5));
-  animation-name: float-up-star;
-}
-
-.particle.is-star::after {
-  content: '';
-  position: absolute;
-  inset: -50%;
-  background: radial-gradient(circle, rgba(0, 200, 83, 0.15), transparent 70%);
-  pointer-events: none;
-}
-
-@keyframes float-up {
-  0% {
-    transform: translateY(0) translateX(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 0.2;
-  }
-  100% {
-    transform: translateY(-100vh) translateX(40px);
-    opacity: 0;
-  }
-}
-
-@keyframes float-up-star {
-  0% {
-    transform: translateY(0) translateX(0) rotate(0deg) scale(0.6);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-    transform: translateY(0) translateX(0) rotate(20deg) scale(1);
-  }
-  40% {
-    transform: translateY(-40vh) translateX(var(--drift-x)) rotate(180deg) scale(1.1);
-    opacity: 1;
-  }
-  65% {
-    opacity: 0.2;
-  }
-  100% {
-    transform: translateY(-100vh) translateX(var(--drift-x)) rotate(360deg) scale(0.3);
-    opacity: 0;
-  }
-}
-
-/* Kule świetlne */
-.bg-orbs {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  animation: orb-move 20s ease-in-out infinite alternate;
-}
-
-.orb-1 {
-  width: 500px;
-  height: 500px;
-  background: rgba(0, 200, 83, 0.06);
-  top: -10%;
-  left: -10%;
-}
-
-.orb-2 {
-  width: 400px;
-  height: 400px;
-  background: rgba(0, 229, 255, 0.05);
-  bottom: -10%;
-  right: -10%;
-  animation-delay: -7s;
-}
-
-.orb-3 {
-  width: 300px;
-  height: 300px;
-  background: rgba(83, 109, 254, 0.04);
-  top: 40%;
-  left: 50%;
-  animation-delay: -14s;
-}
-
-@keyframes orb-move {
-  0% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(60px, -40px) scale(1.1); }
-  66% { transform: translate(-30px, 50px) scale(0.9); }
-  100% { transform: translate(40px, -20px) scale(1.05); }
-}
-
-/* ====================================
-   KARTA LOGOWANIA
-   ==================================== */
-
-.login-container {
+.split-layout {
   position: relative;
   z-index: 10;
   display: flex;
+  width: 100%;
+  max-width: 1360px;
+  min-height: 100vh;
+}
+
+/* LEWY PANEL */
+.left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px 60px 80px 80px;
+  gap: 48px;
+}
+
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.brand-icon {
+  margin-bottom: 12px;
+}
+
+.brand-svg {
+  color: var(--accent-primary);
+  width: 52px;
+  height: 52px;
+}
+
+.brand-name {
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -2px;
+  line-height: 1;
+  margin: 0;
+}
+
+.brand-name .brand-accent {
+  color: var(--accent-primary);
+}
+
+.brand-tagline {
+  font-size: 18px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  margin: 6px 0 0 0;
+  line-height: 1.4;
+}
+
+.brand-systems {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 2px 0 0 0;
+  letter-spacing: 0.3px;
+}
+
+/* Theme toggle — jasny/ciemny */
+.theme-toggle-wrapper {
+  display: flex;
+}
+
+.theme-toggle {
+  display: inline-flex;
   align-items: center;
-  gap: 60px;
+  gap: 8px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  padding: 6px 16px 6px 14px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.theme-toggle:hover {
+  background: var(--bg-active);
+  border-color: var(--accent-primary);
+  opacity: 0.8;
+  color: var(--text-primary);
+}
+
+.theme-toggle svg {
+  flex-shrink: 0;
+}
+
+.theme-toggle-label {
+  white-space: nowrap;
+}
+
+/* System cards */
+.system-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sys-card {
+  background: var(--bg-overlay-light);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.sys-card:hover {
+  background: var(--bg-overlay);
+  border-color: rgba(0, 200, 83, 0.15);
+}
+
+.sys-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sys-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.3px;
+}
+
+.sys-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sys-status.status-online {
+  color: var(--accent-primary);
+}
+
+.sys-status.status-offline {
+  color: #ff5252;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.sys-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sys-version-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.sys-version {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  letter-spacing: 1px;
+}
+
+/* PRAWY PANEL */
+.right-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
 }
 
 .login-card {
   width: 400px;
-  background: rgba(22, 24, 31, 0.8);
+  background: var(--bg-overlay);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 40px;
   display: flex;
   flex-direction: column;
   gap: 32px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--card-shadow);
 }
 
 /* Logo */
@@ -403,7 +440,7 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 }
 
 .logo-icon {
-  color: #00c853;
+  color: var(--accent-primary);
 }
 
 .logo-text {
@@ -414,16 +451,16 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 .logo-title {
   font-size: 22px;
   font-weight: 700;
-  color: #e8eaed;
+  color: var(--text-primary);
 }
 
 .logo-title .accent {
-  color: #00c853;
+  color: var(--accent-primary);
 }
 
 .logo-sub {
   font-size: 11px;
-  color: rgba(232, 234, 237, 0.4);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   font-weight: 500;
@@ -440,13 +477,13 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 .form-title {
   font-size: 22px;
   font-weight: 600;
-  color: #e8eaed;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .form-desc {
   font-size: 13px;
-  color: rgba(232, 234, 237, 0.5);
+  color: var(--text-secondary);
   margin: -12px 0 0 0;
 }
 
@@ -459,7 +496,7 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 .input-group label {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(232, 234, 237, 0.6);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -473,17 +510,17 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 .input-icon {
   position: absolute;
   left: 14px;
-  color: rgba(232, 234, 237, 0.3);
+  color: var(--text-muted);
   pointer-events: none;
 }
 
 .input-wrapper input {
   width: 100%;
   padding: 12px 14px 12px 42px;
-  background: rgba(11, 13, 17, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
-  color: #e8eaed;
+  color: var(--text-primary);
   font-size: 14px;
   font-family: 'Inter', sans-serif;
   outline: none;
@@ -491,21 +528,21 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 }
 
 .input-wrapper input::placeholder {
-  color: rgba(232, 234, 237, 0.25);
+  color: var(--text-muted);
 }
 
 .input-wrapper input:focus {
-  border-color: #00c853;
-  box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.12);
 }
 
 .select-wrapper select {
   width: 100%;
   padding: 12px 14px 12px 42px;
-  background: rgba(11, 13, 17, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
-  color: #e8eaed;
+  color: var(--text-primary);
   font-size: 14px;
   font-family: 'Inter', sans-serif;
   outline: none;
@@ -521,20 +558,21 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
   right: 14px;
   width: 10px;
   height: 10px;
-  border-right: 2px solid rgba(232, 234, 237, 0.3);
-  border-bottom: 2px solid rgba(232, 234, 237, 0.3);
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
   transform: rotate(45deg);
   pointer-events: none;
   margin-top: -6px;
 }
 
 .select-wrapper select:hover {
-  border-color: rgba(0, 200, 83, 0.3);
+  border-color: var(--accent-primary);
+  opacity: 0.7;
 }
 
 .select-wrapper select:focus {
-  border-color: #00c853;
-  box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.12);
 }
 
 .error-msg {
@@ -549,7 +587,7 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
 /* Przycisk */
 .login-btn {
   padding: 14px;
-  background: linear-gradient(135deg, #00c853, #00e676);
+  background: var(--accent-gradient);
   border: none;
   border-radius: 10px;
   color: #000;
@@ -596,9 +634,9 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  color: rgba(232, 234, 237, 0.2);
+  color: var(--text-muted);
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--border-color);
 }
 
 /* ====================================
@@ -610,7 +648,7 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
   right: 28px;
   z-index: 100;
   background: var(--bg-card, #16181f);
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--border-color);
   border-radius: 1rem;
   padding: 0.6rem 1.2rem;
   opacity: 0.6;
@@ -660,7 +698,7 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
   height: 22px;
   line-height: 22px;
   padding-left: 4px;
-  color: #00c853;
+  color: var(--accent-primary);
   animation: lr-spin 4s infinite;
 }
 
@@ -675,38 +713,4 @@ const particles = Array.from({ length: 80 }, (_, i) => generateParticleStyle(i))
   100% { transform: translateY(-400%); }
 }
 
-/* ====================================
-   STATYSTYKI — flat cards
-   ==================================== */
-.login-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* Kafel z cienkim borderem */
-.stat-item {
-  background: rgba(22, 24, 31, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 18px 28px;
-  text-align: center;
-}
-
-.stat-num {
-  display: block;
-  font-size: 30px;
-  font-weight: 700;
-  color: #00c853;
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: 11px;
-  color: rgba(232, 234, 237, 0.45);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: 4px;
-  display: block;
-}
 </style>

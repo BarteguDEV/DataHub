@@ -1,0 +1,53 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Ładuj CLAUDE.md jako instrukcje projektu przy każdej sesji
+  "instructions": ["CLAUDE.md"],
+  "shell": "powershell.exe",
+  "logLevel": "INFO",
+  // Fundational context — dokumentacja projektu zawsze dostępna
+  "references": {
+    "project-docs": {
+      "path": ".",
+      "description": "DataHub docs — CLAUDE.md, README, konfiguracja projektu"
+    }
+  },
+  // Patterny permisji dla projektu — ufamy własnemu kodowi
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "git *": "allow",
+      "cd *": "allow",
+      "dir *": "allow",
+      "echo *": "allow",
+      "npm *": "ask",
+      "pip *": "ask",
+      "pytest *": "allow",
+      "uvicorn *": "ask",
+      "python *": "ask",
+      "*": "ask"
+    },
+    "external_directory": {
+      // Ścieżki projektu Python/Vue
+      "V:/python-streamlit/**": "allow",
+      "*": "ask"
+    }
+  },
+  // Narzędzia MCP — opcjonalne, odkomentuj jeśli potrzebujesz
+  // "mcp": {
+  //   "playwright": {
+  //     "type": "local",
+  //     "command": ["npx", "-y", "@playwright/mcp"],
+  //     "enabled": false
+  //   }
+  // },
+  // Ustawienia kompaktowania — dłuższy context na duży projekt
+  "compaction": {
+    "auto": true,
+    "tail_turns": 20
+  },
+  // Wyjście narzędzi
+  "tool_output": {
+    "max_lines": 300,
+    "max_bytes": 16000
+  }
+}

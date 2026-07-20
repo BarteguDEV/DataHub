@@ -27,11 +27,72 @@
   /* === Rozmiary === */
   --sidebar-width: 260px;
 
+  /* === Tło ambient (bloby, grid, winieta) === */
+  --grid-color: rgba(0, 200, 83, 0.03);
+  --blob-1-bg: radial-gradient(circle, rgba(0, 200, 83, 0.10), transparent 70%);
+  --blob-2-bg: radial-gradient(circle, rgba(0, 200, 200, 0.07), transparent 70%);
+  --blob-3-bg: radial-gradient(circle, rgba(83, 120, 254, 0.05), transparent 70%);
+  --blob-4-bg: radial-gradient(circle, rgba(0, 229, 200, 0.04), transparent 70%);
+  --blob-5-bg: radial-gradient(circle, rgba(255, 50, 50, 0.18), transparent 70%);
+  --vignette-bg: radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(7, 9, 14, 0.65) 100%);
+
+  /* === Overlay / Input === */
+  --bg-overlay: rgba(22, 24, 31, 0.8);
+  --bg-overlay-light: rgba(22, 24, 31, 0.55);
+  --bg-input: rgba(11, 13, 17, 0.8);
+  --card-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+
+  /* === Scrollbar === */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+
   /* === Font === */
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 15px;
   line-height: 1.5;
   color: var(--text-primary);
+}
+
+/* ==========================================================
+   LIGHT THEME
+   ========================================================== */
+[data-theme="light"] {
+  --bg-primary: #f0f2f5;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 200, 83, 0.06);
+  --bg-tag: rgba(0, 0, 0, 0.04);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --text-primary: #1a1a2e;
+  --text-secondary: rgba(26, 26, 46, 0.6);
+  --text-muted: rgba(26, 26, 46, 0.35);
+  --accent-primary: #00a94f;
+  --accent-secondary: #0099cc;
+  --accent-gradient: linear-gradient(135deg, #00a94f, #0099cc);
+  --grid-color: rgba(0, 169, 79, 0.04);
+  --blob-1-bg: radial-gradient(circle, rgba(0, 169, 79, 0.06), transparent 70%);
+  --blob-2-bg: radial-gradient(circle, rgba(0, 153, 204, 0.04), transparent 70%);
+  --blob-3-bg: radial-gradient(circle, rgba(83, 120, 254, 0.03), transparent 70%);
+  --blob-4-bg: radial-gradient(circle, rgba(0, 200, 200, 0.02), transparent 70%);
+  --blob-5-bg: radial-gradient(circle, rgba(255, 50, 50, 0.08), transparent 70%);
+  --vignette-bg: radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(200, 200, 210, 0.25) 100%);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.08);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.15);
+  --bg-overlay: rgba(255, 255, 255, 0.85);
+  --bg-overlay-light: rgba(255, 255, 255, 0.7);
+  --bg-input: rgba(240, 242, 245, 0.9);
+  --card-shadow: 0 24px 80px rgba(0, 0, 0, 0.15);
+}
+
+/* Płynne przejścia przy zmianie motywu */
+*,
+*::before,
+*::after {
+  transition: background-color 0.35s ease,
+              color 0.35s ease,
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
 }
 
 /* === Reset === */
@@ -41,6 +102,16 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+/* Płynne przejścia przy zmianie motywu */
+*,
+*::before,
+*::after {
+  transition: background-color 0.35s ease,
+              color 0.35s ease,
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
 }
 
 html {
@@ -65,12 +136,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-thumb);
   border-radius: 100px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* === Linki === */
@@ -87,7 +158,7 @@ a:hover {
 /* === Selekcja === */
 ::selection {
   background: rgba(0, 200, 83, 0.3);
-  color: #fff;
+  color: var(--text-primary);
 }
 
 /* === Transition globalny dla router === */
@@ -117,4 +188,130 @@ a:hover {
 
 .font-mono {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ==========================================================
+   GLOBALNE TŁO AMBIENT — siatka + gradient mesh + winieta
+   ========================================================== */
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 70%);
+}
+
+.bg-ambient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.ambient-blob {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform, opacity;
+}
+
+.blob-1 {
+  width: 650px;
+  height: 650px;
+  background: var(--blob-1-bg);
+  filter: blur(90px);
+  top: -20%;
+  left: -15%;
+  animation: blob-drift-1 35s ease-in-out infinite alternate;
+}
+
+.blob-2 {
+  width: 520px;
+  height: 520px;
+  background: var(--blob-2-bg);
+  filter: blur(100px);
+  bottom: -18%;
+  right: -12%;
+  animation: blob-drift-2 30s ease-in-out infinite alternate;
+}
+
+.blob-3 {
+  width: 380px;
+  height: 380px;
+  background: var(--blob-3-bg);
+  filter: blur(120px);
+  top: 30%;
+  left: 60%;
+  animation: blob-drift-3 40s ease-in-out infinite alternate;
+}
+
+.blob-4 {
+  width: 300px;
+  height: 300px;
+  background: var(--blob-4-bg);
+  filter: blur(80px);
+  top: 60%;
+  left: 10%;
+  animation: blob-drift-4 45s ease-in-out infinite alternate;
+}
+
+.blob-5 {
+  width: 450px;
+  height: 450px;
+  background: var(--blob-5-bg);
+  filter: blur(90px);
+  top: -18%;
+  right: -10%;
+  animation: blob-drift-5 38s ease-in-out infinite alternate;
+}
+
+@keyframes blob-drift-1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  25%  { transform: translate(120px, -80px) scale(1.15); }
+  50%  { transform: translate(-60px, 70px) scale(0.9); }
+  75%  { transform: translate(90px, 50px) scale(1.1); }
+  100% { transform: translate(-50px, -100px) scale(1.02); }
+}
+
+@keyframes blob-drift-2 {
+  0%   { transform: translate(0, 0) scale(1); }
+  25%  { transform: translate(-100px, 70px) scale(0.9); }
+  50%  { transform: translate(70px, -110px) scale(1.12); }
+  75%  { transform: translate(-110px, -50px) scale(1.0); }
+  100% { transform: translate(50px, 90px) scale(1.08); }
+}
+
+@keyframes blob-drift-3 {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  33%  { transform: translate(-70px, -50px) scale(1.12) rotate(3deg); }
+  66%  { transform: translate(50px, 70px) scale(0.92) rotate(-3deg); }
+  100% { transform: translate(40px, -60px) scale(1.08) rotate(2deg); }
+}
+
+@keyframes blob-drift-4 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(-80px, -60px) scale(0.92); }
+  100% { transform: translate(60px, 40px) scale(1.12); }
+}
+
+@keyframes blob-drift-5 {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(-50px, 80px) scale(1.15); }
+  66%  { transform: translate(30px, -40px) scale(0.9); }
+  100% { transform: translate(-60px, 60px) scale(1.08); }
+}
+
+/* Winieta — przyciemnienie krawędzi */
+.bg-vignette {
+  position: fixed;
+  inset: 0;
+  background: var(--vignette-bg);
+  pointer-events: none;
+  z-index: 0;
 }

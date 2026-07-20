@@ -40,7 +40,7 @@
     </template>
 
     <div class="embed-footer">
-      <span class="footer-ver">DataHub Streamlit | v0.11.0</span>
+      <span class="footer-ver">DataHub Streamlit | v0.21.0</span>
       <span class="footer-hint">{{ streamlitSource }}</span>
     </div>
   </div>

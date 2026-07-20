@@ -33,6 +33,12 @@ const routes = [
     meta: { title: 'AI Hub', requiresAuth: true, hub: 'ai' },
   },
   {
+    path: '/planning',
+    name: 'PlanningHub',
+    component: () => import('@/hubs/planning/PlanningHubView.vue'),
+    meta: { title: 'Planning Hub', requiresAuth: true, hub: 'planning' },
+  },
+  {
     // Wszystko inne → login
     path: '/:pathMatch(.*)*',
     redirect: '/login',

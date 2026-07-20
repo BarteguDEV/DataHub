@@ -152,6 +152,20 @@ const hubs = [
       { name: 'Documentation Generator', author: 'K. Kozłowski', version: 'v2.1.0', status: 'active' },
     ],
   },
+  {
+    name: 'PLANNING',
+    cls: 'planning',
+    route: 'PlanningHub',
+    title: 'Planning Hub',
+    bottomText: 'PLANNING HUB',
+    desc: 'Zapisuj tematy ze spotkań, układaj priorytety na liście rankingowej lub w macierzy 2×2. Przeciągaj karty, grupuj, planuj.',
+    icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+    modules: [
+      { name: 'Quick-Add Topics', author: 'Bartegu', version: 'v0.1.0', status: 'beta' },
+      { name: 'Priority Ranking', author: 'Bartegu', version: 'v0.1.0', status: 'beta' },
+      { name: 'Value-Effort Matrix', author: 'Bartegu', version: 'v0.1.0', status: 'beta' },
+    ],
+  },
 ]
 
 onMounted(fetchVersion)
@@ -267,6 +281,7 @@ function navigate(name) {
 .hub-tile.ddt .tile-accent { background: linear-gradient(90deg, #00c853, #00e5ff); }
 .hub-tile.business .tile-accent { background: linear-gradient(90deg, #ff9100, #ff3d00); }
 .hub-tile.ai .tile-accent { background: linear-gradient(90deg, #536dfe, #d500f9); }
+.hub-tile.planning .tile-accent { background: linear-gradient(90deg, #ffd54f, #ff6f00); }
 
 /* ──────── RAMKA ANIMOWANA (WYŁĄCZONA) ──────── */
 
@@ -286,6 +301,7 @@ function navigate(name) {
   font-weight: 600;
 }
 
+.hub-tile.planning .bottom-text { color: #ffb300; }
 .hub-tile.ddt .bottom-text { color: #00c853; }
 .hub-tile.business .bottom-text { color: #ff9100; }
 .hub-tile.ai .bottom-text { color: #536dfe; }
@@ -315,6 +331,7 @@ function navigate(name) {
   background: var(--bg-hover);
 }
 
+.hub-tile.planning .tile-icon { color: #ffb300; }
 .hub-tile.ddt .tile-icon { color: #00c853; }
 .hub-tile.business .tile-icon { color: #ff9100; }
 .hub-tile.ai .tile-icon { color: #536dfe; }

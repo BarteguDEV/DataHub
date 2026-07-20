@@ -1,94 +1,178 @@
-# DataHub — Aplikacja Flask z logowaniem
+# DataHub — Portal integracyjny
 
-Prosta aplikacja Flask z rejestracją i logowaniem użytkowników, gotowa do deployu na **Azure App Service**.
+FastAPI + Vue 3 + Streamlit.  
+Centralne centrum monitoringu procesów biznesowych, migracji systemów i raportów AI.
 
-## Uruchomienie lokalne
+## Wymagania
 
-```bash
-# 1. Wirtualne środowisko
-python -m venv venv
-venv\Scripts\activate    # Windows
-source venv/bin/activate  # Linux/macOS
+| Narzędzie | Minimalna wersja | Sprawdź |
+|-----------|-----------------|---------|
+| Python | 3.11+ | `python --version` |
+| Node.js | 20+ | `node --version` |
+| npm | 10+ | `npm --version` |
 
-# 2. Zainstaluj zależności
+## Szybki start (Windows)
+
+```powershell
+# 1. Sklonuj repo
+git clone <repo-url>
+cd DataHub
+
+# 2. Utwórz i aktywuj venv
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+
+# 3. Zainstaluj zależności Python
 pip install -r requirements.txt
 
-# 3. Uruchom
-python App.py
+# 4. Zainstaluj zależności frontendu
+cd vue-app
+npm install
+cd ..
+
+# 5. Zbuduj frontend
+cd vue-app
+npm run build
+cd ..
+
+# 6. Uruchom serwer
+uvicorn App:app --host 0.0.0.0 --port 5000 --reload
 ```
 
-Aplikacja będzie dostępna pod adresem `http://localhost:5000`.
+Aplikacja dostępna pod `http://localhost:5000`.
 
-### Domyślny użytkownik
+---
 
-Przy pierwszym uruchomieniu automatycznie tworzone jest konto:
+## Szybki start (skrypt)
 
-| Login | Hasło |
-|-------|-------|
-| admin | admin123 |
+```powershell
+.\run_local.ps1
+```
 
-## Zmienne środowiskowe
+Buduje Vue, generuje raporty AI i uruchamia serwer.
+
+## Domyślni użytkownicy
+
+| Login | Hasło | Rola |
+|-------|-------|------|
+| admin | admin123 | Developer |
+| demo | demo123 | Developer |
+
+## Zmienne środowiskowe (`.env`)
 
 | Zmienna | Opis | Domyślnie |
 |---------|------|-----------|
-| `SECRET_KEY` | Klucz do podpisywania sesji | (generowany losowo) |
-| `DATABASE_URL` | URL bazy danych (SQLAlchemy) | `sqlite:///users.db` |
-| `PORT` | Port serwera (używany przez Azure) | `5000` |
+| `JWT_SECRET` | Klucz do JWT | (generowany losowo) |
+| `DATABASE_URL` | URL bazy SQLAlchemy | `sqlite:///users.db` |
+| `STREAMLIT_PORT` | Port Streamlit | `8501` |
+| `PORT` | Port serwera FastAPI | `5000` |
 
-> **Na Azure** ustaw `SECRET_KEY` w **Application Settings** w portalu App Service.  
-> Dla bazy produkcyjnej podmień `DATABASE_URL` na np. Azure SQL lub PostgreSQL.
+## Wymagania
 
-## Deploy na Azure App Service
+| Narzędzie | Wersja |
+|-----------|--------|
+| Python | 3.11+ |
+| Node.js | 20+ |
+| npm | 10+ |
 
-### Opcja A — przez Git (Azure CLI)
+## Uruchomienie krok po kroku
 
-```bash
-# Zaloguj do Azure
-az login
+### 1. Backend (Python)
 
-# Utwórz App Service (Linux + Python)
-az group create --nazwa moja-grupa --location westeurope
-az webapp up --runtime "PYTHON:3.12" --sku B1 --location westeurope --nazwa datahub-app
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1          # Windows
+source .venv/bin/activate            # Linux/macOS
 
-# Ustaw zmienne środowiskowe
-az webapp config appsettings set \
-  --nazwa datahub-app \
-  --resource-group moja-grupa \
-  --settings SECRET_KEY="tutaj_wygenerowany_klucz"
-
-# Ustaw komendę startową
-az webapp config set \
-  --nazwa datahub-app \
-  --resource-group moja-grupa \
-  --startup-file "gunicorn --bind=0.0.0.0:8000 --workers=2 --timeout=120 App:app"
+pip install -r requirements.txt
+pip install pytest pytest-cov       # do testów
 ```
 
-### Opcja B — przez GitHub Actions (CI/CD)
+### 2. Frontend (Vue)
 
-W repozytorium GitHub:
+```powershell
+cd vue-app
+npm install
+npm run build
+cd ..
+```
 
-1. Dodaj sekrety: `AZURE_WEBAPP_PUBLISH_PROFILE`, `SECRET_KEY`
-2. Wrzuć plik `.github/workflows/deploy.yml` z workflowem deployu (opcjonalnie)
+### 3. Uruchom
 
-### Opcja C — przez Deployment Center w portalu
+```powershell
+uvicorn App:app --host 0.0.0.0 --port 5000 --reload
+```
 
-1. Wejdź w App Service → **Deployment Center**
-2. Wybierz GitHub → swój repo → branch `main`
-3. Portal sam skonfiguruje CI/CD
+Otwórz `http://localhost:5000`.
+
+### 4. (opcjonalnie) Streamlit dashboard
+
+Streamlit uruchamia się automatycznie jako subproces FastAPI.  
+Dostępny pod `http://localhost:5000/streamlit/`.
+
+## Testy
+
+```bash
+# Backend
+pytest tests/ -v
+
+# Z coverage
+pytest tests/ --cov=. --cov-report=term
+
+# Generuj raport coverage dla frontendu
+python generate_coverage.py
+```
 
 ## Struktura projektu
 
 ```
 DataHub/
-├── App.py              # Główna aplikacja Flask
-├── requirements.txt    # Zależności Pythona
-├── startup.sh          # Skrypt startowy dla Azure (Linux)
-├── .env                # Zmienne lokalne (nie commitować!)
+├── App.py                          # FastAPI backend
+├── streamlit_app.py                # Streamlit dashboard (stub)
+├── generate_coverage.py            # Generuje raport coverage
+├── generate_ai_reports.py          # Generuje raporty AI
+├── requirements.txt                # Zależności Python
+├── .env                            # Zmienne lokalne
 ├── .gitignore
-├── README.md
-└── templates/
-    ├── base.html       # Szablon bazowy
-    ├── login.html      # Strona logowania
-    ├── register.html   # Strona rejestracji
-    └── index.html      # Panel główny (po zalogowaniu)
+├── .github/workflows/
+│   └── tests.yml                   # CI/CD Pipeline
+├── static/
+│   ├── test-coverage.json          # Raport coverage (generowany)
+│   └── vue/                        # Zbudowany frontend (generowany)
+├── vue-app/
+│   ├── src/                        # Kod źródłowy Vue
+│   │   ├── views/                  # Widoki (Login, HubSelect, itd.)
+│   │   ├── hubs/                   # Huby (business, developers, ai)
+│   │   ├── components/             # Komponenty (AppHeader, AppSidebar)
+│   │   ├── stores/                 # Pinia stores (auth, version, width)
+│   │   ├── router/                 # Vue Router
+│   │   ├── api.js                  # Klient API z JWT
+│   │   ├── App.vue
+│   │   └── main.js
+│   ├── package.json
+│   └── vite.config.js
+├── vue-app/src/hubs/developers/
+│   └── streamlit_app.py           # Streamlit dashboard
+├── tests/
+│   ├── test_api.py                # Testy endpointów FastAPI
+│   ├── test_streamlit_funcs.py    # Testy funkcji Streamlit
+│   └── test_reports.py            # Testy raportów AI
+├── generate_coverage.py           # Generator raportu coverage
+├── generate_ai_reports.py         # Generator raportów AI
+├── ai-reports/                    # Wygenerowane raporty AI
+├── users.db                       # Baza SQLite (lokalnie)
+└── .github/workflows/
+    └── tests.yml                  # CI/CD Pipeline
 ```
+
+## CI/CD
+
+Po pushu na `main`/`master` GitHub Actions automatycznie:
+1. Uruchamia testy backendu i frontendu
+2. Generuje raport coverage
+3. Buduje Vue SPA
+4. Deployuje na Azure App Service
+
+Wymagane **sekrety GitHub**:
+- `AZURE_WEBAPP_NAME` — nazwa App Service
+- `AZURE_WEBAPP_PUBLISH_PROFILE` — profil publikacji z Azure Portal
